@@ -1,0 +1,51 @@
+# Local / dev: chỉ Platform — registry lưu file (data/bots-registry.json), không cần MySQL.
+# Chạy từ thư mục này (platform/):
+#   docker compose up --build
+#
+# Bản MySQL + Platform (production / staging): dùng docker-compose.prod.yml
+#
+# Redis: trong mạng Docker hostname `redis` — bot (PM2) kế thừa REDIS_HOST/REDIS_PORT từ Platform. Xem docs/REDIS-BOT-SESSION.md
+
+services:
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "3980:3980"
+    env_file:
+      - path: .env
+        required: false
+    # Basso admin / khác: ghi trong platform/.env (BASSO_URL, BASSO_API_KEY, PLATFORM_SESSION_SECRET, …)
+    environment:
+      NODE_ENV: production
+      PLATFORM_COOKIE_SECURE: "0"
+      PORT: "3980"
+      PLATFORM_ADMIN_USER: admin
+      PLATFORM_ADMIN_PASSWORD: admin-dev-docker
+      PUBLIC_ORIGIN: http://localhost:3980
+      BOT_PORT_START: "4100"
+      BOT_NODE_OPTIONS: --max-old-space-size=384
+      BOT_PM2_MAX_MEMORY: "450M"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+    volumes:
+      - ./data:/app/data
+      # Tuỳ chọn — tab «Logs hệ thống»: cần thêm Docker CLI vào image và gắn socket (xem .env.example)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped

@@ -1,0 +1,15 @@
+.DS_Store
+.env
+platform/.env
+example-chat-bot/server/.env
+node_modules/
+platform/node_modules/
+example-chat-bot/server/node_modules/
+
+# Platform runtime data
+platform/data/
+/data/bots
+/data/mysql
+/data/platform-bot-icons
+/data
+data/redis/

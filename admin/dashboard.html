@@ -1,0 +1,2668 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#062538" />
+  <title>Platform — Bot</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      background: #fff;
+      color: #333;
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    a { color: #00354e; }
+    a:hover { color: #062538; }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 20px 20px 80px; }
+    h1 { font-size: 1.45rem; font-weight: 700; margin-bottom: 6px; color: #1a4a5c; }
+    .sub { color: #888; font-size: 0.9rem; margin-bottom: 20px; }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: 0 1px 3px rgba(6, 37, 56, 0.06);
+    }
+    .card h2 { font-size: 1rem; margin-bottom: 14px; color: #1a4a5c; }
+    label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 6px; }
+    input[type="text"], input[type="password"], input[type="url"] {
+      width: 100%; max-width: 360px;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #333;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, input[type="url"]:focus {
+      outline: none;
+      border-color: #f5a623;
+      box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.15);
+    }
+    input[type="file"] { margin-top: 8px; color: #666; font-size: 14px; }
+    .row { margin-bottom: 14px; }
+    .role-checklist {
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      padding: 10px 12px;
+      max-width: 520px;
+      background: #fff;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px 12px;
+    }
+    .role-checklist .role-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #333;
+      user-select: none;
+    }
+    .role-checklist input[type="checkbox"] { width: 16px; height: 16px; }
+    button {
+      padding: 9px 16px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary { background: #f5a623; color: #fff; }
+    .btn-primary:hover { background: #e09510; }
+    .btn-ghost { background: transparent; color: #00354e; border-color: #ddd; }
+    .btn-ghost:hover { background: #f5f6f8; border-color: #ccc; }
+    .btn-danger { background: #dc3545; color: #fff; }
+    .btn-danger:hover { filter: brightness(1.05); }
+    .btn-sm { padding: 6px 11px; font-size: 13px; margin-right: 8px; margin-top: 6px; }
+    .login-panel { max-width: 400px; }
+    .hidden { display: none !important; }
+    .err { color: #dc3545; font-size: 0.9rem; margin-top: 10px; }
+    .ok { color: #198754; font-size: 0.9rem; margin-top: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid #e8eaed; vertical-align: top; }
+    th { color: #555; font-weight: 600; }
+    .status-pending, .status-extracting, .status-cloning, .status-installing, .status-starting { color: #b8860b; }
+    .status-running { color: #198754; }
+    .status-error { color: #dc3545; }
+    .dashboard-header {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 16px 18px 14px;
+      background: #062538;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      direction: ltr;
+    }
+    .dashboard-header__row {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 10px;
+      min-width: 0;
+    }
+    .dashboard-header__logo-link {
+      display: flex;
+      align-items: center;
+      line-height: 0;
+      flex-shrink: 0;
+      min-width: 0;
+    }
+    .dashboard-header__logo {
+      height: 34px;
+      width: auto;
+      max-width: min(160px, 42vw);
+      display: block;
+      object-fit: contain;
+    }
+    .dashboard-header__actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      min-width: 0;
+    }
+    .header-icon-btn {
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .header-icon-btn svg {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    .topbar-user {
+      font-size: 0.95rem;
+      color: rgba(255, 255, 255, 0.65);
+      text-align: left;
+    }
+    .topbar-user strong {
+      color: #fff;
+      font-weight: 600;
+    }
+    .dashboard-header .btn-ghost {
+      color: rgba(255, 255, 255, 0.92);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+    .dashboard-header .btn-ghost:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.5);
+    }
+    .hint { font-size: 0.8rem; color: #888; margin-top: 10px; }
+    .hint code, .card code {
+      font-size: 0.85em;
+      background: #f0f3f5;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #333;
+    }
+
+    /* Menu quản trị — FAB góc dưới trái (chỉ admin / bot_admin) */
+    .admin-menu-wrap {
+      position: fixed;
+      left: max(14px, env(safe-area-inset-left, 0px));
+      bottom: max(14px, env(safe-area-inset-bottom, 0px));
+      z-index: 1500;
+    }
+    .admin-menu-wrap.hidden { display: none !important; }
+    .icon-btn-admin {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: #062538;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      box-shadow: 0 6px 24px rgba(6, 37, 56, 0.35);
+      transition: background 0.15s, border-color 0.15s, transform 0.12s, box-shadow 0.15s;
+    }
+    .icon-btn-admin:hover {
+      background: #0a3d56;
+      border-color: rgba(245, 166, 35, 0.55);
+      box-shadow: 0 8px 28px rgba(6, 37, 56, 0.4);
+    }
+    .icon-btn-admin:active { transform: scale(0.96); }
+    .icon-btn-admin[aria-expanded="true"] {
+      background: #0d4a68;
+      border-color: #f5a623;
+      box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.35);
+    }
+    .icon-btn-admin svg { width: 22px; height: 22px; display: block; }
+    .admin-menu-panel {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      left: 0;
+      right: auto;
+      top: auto;
+      min-width: 232px;
+      max-width: min(280px, calc(100vw - 28px));
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      box-shadow: 0 14px 44px rgba(6, 37, 56, 0.22);
+      padding: 8px;
+      z-index: 1501;
+    }
+    .admin-menu-panel.hidden { display: none !important; }
+    .admin-menu-item {
+      display: flex;
+      width: 100%;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 12px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #1a4a5c;
+      font-size: 14px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .admin-menu-item:hover { background: #f3f5f7; }
+    .admin-menu-item.active {
+      background: rgba(245, 166, 35, 0.14);
+      color: #a86b00;
+    }
+    .admin-menu-item .admin-menu-ico {
+      width: 22px;
+      height: 22px;
+      flex-shrink: 0;
+      opacity: 0.88;
+    }
+    /* Tránh nội dung bị che bởi FAB quản trị (class gắn bằng JS) */
+    body.has-admin-fab .wrap {
+      padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+    @media (min-width: 720px) {
+      .dashboard-header__logo {
+        height: 38px;
+        max-width: 200px;
+      }
+      .dashboard-header {
+        padding: 18px 22px 16px;
+      }
+    }
+    .subpage-toolbar { margin-bottom: 18px; }
+    .btn-back-dashboard {
+      background: transparent;
+      border: none;
+      color: #00354e;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 6px 0;
+      font-family: inherit;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    .btn-back-dashboard:hover { color: #062538; }
+
+    /* Dashboard — lưới 3 cột (desktop), co dãn mobile */
+    .bot-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+    @media (min-width: 560px) {
+      .bot-grid { grid-template-columns: repeat(2, 1fr); gap: 18px; }
+    }
+    @media (min-width: 960px) {
+      .bot-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    }
+    .bot-tile {
+      min-height: 120px;
+      max-width: 100%;
+      width: 100%;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      cursor: pointer;
+      color: inherit;
+      font: inherit;
+      text-align: left;
+      box-shadow: 0 1px 3px rgba(6, 37, 56, 0.05);
+    }
+    .bot-tile:hover:not(:disabled) {
+      border-color: #00354e;
+      box-shadow: 0 0 0 1px rgba(0, 53, 78, 0.12);
+    }
+    .bot-tile:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+    .bot-tile.is-running { border-color: rgba(25, 135, 84, 0.45); }
+    .bot-tile.is-error { border-color: rgba(220, 53, 69, 0.45); }
+    .bot-tile-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: 100%;
+    }
+    .bot-tile-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-top: 2px;
+    }
+    .bot-tile-icon-shell {
+      width: 88px;
+      height: 88px;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #f4f6f8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border: 1px solid #e5e7eb;
+    }
+    .bot-tile-icon-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .bot-tile-icon-fallback {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #00354e;
+      line-height: 1;
+      user-select: none;
+    }
+    .bot-tile-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #1a4a5c;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      width: 100%;
+    }
+    .bot-tile-desc {
+      font-size: 0.78rem;
+      color: #666;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      width: 100%;
+    }
+    .bot-tile-desc--empty {
+      font-style: italic;
+      opacity: 0.55;
+    }
+    textarea.modal-textarea {
+      width: 100%;
+      max-width: 100%;
+      min-height: 72px;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    textarea.modal-textarea:focus {
+      outline: none;
+      border-color: #f5a623;
+      box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.15);
+    }
+    .edit-icon-preview-wrap {
+      margin-top: 10px;
+      margin-bottom: 4px;
+    }
+    .edit-bot-icon-preview {
+      max-width: 120px;
+      max-height: 120px;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      object-fit: cover;
+    }
+    #grid-loading { margin-bottom: 12px; }
+
+    .manage-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .manage-toolbar h2 { margin: 0; font-size: 1rem; color: #1a4a5c; }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      background: rgba(6, 37, 56, 0.45);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: max(14px, env(safe-area-inset-top, 0px)) 20px max(20px, env(safe-area-inset-bottom, 0px));
+      overflow-y: auto;
+    }
+    .modal-dialog {
+      position: relative;
+      width: 100%;
+      max-width: 440px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 22px 22px 20px;
+      box-shadow: 0 16px 48px rgba(6, 37, 56, 0.15);
+    }
+    /* Form thêm/sửa bot — giữ tiêu đề + tab + nút đóng; phần nội dung cuộn riêng (Clone GitHub cao hơn zip) */
+    .modal-dialog.modal-dialog--form {
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 28px);
+      max-height: calc(100dvh - 28px);
+      overflow: hidden;
+      margin-bottom: auto;
+    }
+    .modal-dialog.modal-dialog--form > h2 {
+      flex-shrink: 0;
+      font-size: 1.1rem;
+      color: #1a4a5c;
+      margin-bottom: 8px;
+      padding-right: 48px;
+      line-height: 1.3;
+    }
+    .modal-dialog.modal-dialog--form > .modal-tabs {
+      flex-shrink: 0;
+      margin-bottom: 10px;
+    }
+    .modal-dialog.modal-dialog--form > .add-tab-panel {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 2px;
+    }
+    .modal-dialog.modal-dialog--form > .modal-form-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding-right: 2px;
+    }
+    .modal-dialog.modal-dialog--form .row {
+      margin-bottom: 10px;
+    }
+    .modal-dialog.modal-dialog--form .modal-actions {
+      margin-top: 12px;
+    }
+    .modal-dialog h2 { font-size: 1.1rem; color: #1a4a5c; margin-bottom: 14px; }
+    .modal-dialog .row input[type="text"],
+    .modal-dialog .row input[type="url"],
+    .modal-dialog .row input[type="file"] { max-width: 100%; width: 100%; }
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #f0f3f5;
+      color: #555;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+    }
+    .modal-close:hover { color: #062538; background: #e5e7eb; }
+    .modal-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+    .modal-tab {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: 8px;
+      border: 1px solid #ddd;
+      background: #fafbfc;
+      color: #666;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .modal-tab:hover { color: #1a4a5c; }
+    .modal-tab.active {
+      border-color: #f5a623;
+      color: #c77d00;
+      background: rgba(245, 166, 35, 0.1);
+    }
+    .add-tab-panel .hint { margin-bottom: 0; }
+    .modal-actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .modal-actions .btn-ghost { margin: 0; }
+
+    .modal-dialog.is-wide {
+      max-width: min(920px, 96vw);
+    }
+    .log-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .log-toolbar label { margin: 0; font-size: 0.8rem; color: #555; display: flex; align-items: center; gap: 6px; }
+    .log-toolbar select {
+      background: #fff;
+      color: #333;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+    .log-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .log-tab {
+      padding: 8px 14px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: #fafbfc;
+      color: #666;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .log-tab.active { border-color: #00354e; color: #00354e; }
+    .log-paths { font-size: 0.72rem; color: #888; margin-bottom: 8px; word-break: break-all; }
+    .log-pre-wrap {
+      margin: 0;
+      padding: 12px;
+      border-radius: 8px;
+      background: #f6f8fa;
+      border: 1px solid #e5e7eb;
+      font-family: ui-monospace, 'Cascadia Code', Menlo, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      color: #24292f;
+      max-height: min(60vh, 520px);
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .log-pre-wrap.is-err { border-color: rgba(220, 53, 69, 0.45); }
+
+    .env-wizard-scroll {
+      max-height: min(50vh, 440px);
+      overflow-y: auto;
+      margin-bottom: 14px;
+      padding-right: 8px;
+    }
+    .env-field label.key {
+      display: block;
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 0.82rem;
+      color: #00354e;
+      margin-bottom: 4px;
+    }
+    .env-field .hint-line {
+      font-size: 0.75rem;
+      color: #888;
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+    .env-field { margin-bottom: 16px; }
+    .env-field.needs-user {
+      padding: 10px 12px;
+      margin-left: -12px;
+      margin-right: -12px;
+      border-radius: 8px;
+      border: 1px dashed rgba(245, 166, 35, 0.55);
+      background: rgba(245, 166, 35, 0.08);
+    }
+    .env-field.needs-user label.key::after {
+      content: ' — cần điền';
+      font-weight: 600;
+      color: #b8860b;
+      font-size: 0.72rem;
+    }
+    .env-field input[type="text"],
+    .env-field input[type="password"] {
+      width: 100%;
+      max-width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+    }
+    .env-field input[type="text"]:focus,
+    .env-field input[type="password"]:focus {
+      outline: none;
+      border-color: #f5a623;
+      box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.15);
+    }
+    .env-skip-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0;
+      font-size: 0.85rem;
+      color: #666;
+    }
+    .env-skip-row input { width: auto; margin: 0; }
+
+    /* Form modals — mobile (thêm/sửa bot Node, thêm bot Python) */
+    @media (max-width: 560px) {
+      .dashboard-header {
+        padding: 10px 12px 10px;
+      }
+      .dashboard-header__logo {
+        height: 26px;
+        max-width: min(108px, 44vw);
+      }
+      .topbar-user {
+        font-size: 0.78rem;
+        max-width: min(150px, 36vw);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .header-icon-btn {
+        width: 40px;
+        height: 40px;
+      }
+      .icon-btn-admin {
+        width: 48px;
+        height: 48px;
+      }
+      input[type="text"], input[type="password"], input[type="url"] {
+        max-width: 100%;
+      }
+      .modal-backdrop {
+        align-items: flex-start;
+        justify-content: center;
+        padding: max(10px, env(safe-area-inset-top, 0px)) 12px max(14px, env(safe-area-inset-bottom, 0px));
+      }
+      .modal-dialog {
+        max-width: none;
+        width: 100%;
+        margin: 0 auto;
+        padding: 18px 16px 16px;
+        border-radius: 12px 12px 10px 10px;
+        max-height: calc(100vh - 24px);
+        max-height: calc(100dvh - 24px);
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .modal-dialog h2 {
+        font-size: 1.02rem;
+        line-height: 1.35;
+        padding-right: 44px;
+        margin-bottom: 12px;
+      }
+      .modal-close {
+        top: 10px;
+        right: 12px;
+      }
+      .modal-tabs {
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .modal-tab {
+        flex: none;
+        width: 100%;
+        padding: 12px 14px;
+        font-size: 14px;
+      }
+      .modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      .modal-actions button {
+        width: 100%;
+        margin-right: 0;
+        margin-top: 0;
+        padding: 12px 16px;
+        font-size: 15px;
+      }
+      /* Tránh zoom khi focus ô nhập trên iOS Safari */
+      .modal-dialog input[type="text"],
+      .modal-dialog input[type="password"],
+      .modal-dialog input[type="url"],
+      .modal-dialog textarea.modal-textarea {
+        font-size: 16px;
+        max-width: 100%;
+      }
+      .modal-dialog .row input[type="file"] {
+        max-width: 100%;
+        font-size: 14px;
+      }
+      .role-checklist {
+        max-width: none;
+        grid-template-columns: 1fr;
+        padding: 10px;
+      }
+      .modal-dialog.is-wide {
+        max-width: none;
+        width: 100%;
+      }
+      .log-pre-wrap {
+        max-height: min(50vh, 360px);
+        font-size: 10px;
+      }
+      .env-wizard-scroll {
+        max-height: min(42vh, 320px);
+      }
+      .env-skip-row {
+        flex-wrap: wrap;
+        align-items: flex-start;
+      }
+      .env-skip-row label[for="env-skip-restart"] {
+        flex: 1;
+        min-width: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="dashboard-header">
+    <div class="dashboard-header__row">
+      <a class="dashboard-header__logo-link" href="/admin/dashboard.html" id="link-home" aria-label="Trang chủ — danh sách bot">
+        <img class="dashboard-header__logo" src="/images/logo.png" alt="" width="120" height="32" onerror="this.style.display='none'" />
+      </a>
+      <div class="dashboard-header__actions">
+        <span id="topbar-user" class="topbar-user" aria-live="polite"></span>
+        <button type="button" class="btn-ghost header-icon-btn" id="btn-logout" aria-label="Đăng xuất" title="Đăng xuất">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Menu quản trị: FAB góc dưới trái (không nằm trong header) -->
+  <div id="admin-menu-wrap" class="admin-menu-wrap hidden">
+    <button type="button" class="icon-btn-admin" id="btn-admin-menu-toggle" aria-expanded="false" aria-haspopup="true" aria-controls="admin-menu-panel" aria-label="Menu quản trị">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.5" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="19" r="1.5" fill="currentColor" stroke="none" />
+      </svg>
+    </button>
+    <div id="admin-menu-panel" class="admin-menu-panel hidden" role="menu" aria-label="Quản trị">
+      <button type="button" class="admin-menu-item" role="menuitem" data-admin-panel="manage">
+        <svg class="admin-menu-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.6.78 1 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+        <span>Quản lý bot</span>
+      </button>
+      <button type="button" class="admin-menu-item" role="menuitem" data-admin-panel="python">
+        <svg class="admin-menu-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 4h6l3 3v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7l3-3Z"/><path d="M9 4v3h6V4"/></svg>
+        <span>Bot (Python)</span>
+      </button>
+      <button type="button" class="admin-menu-item" role="menuitem" data-admin-panel="system">
+        <svg class="admin-menu-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path d="M5 21v-1a5 5 0 0 1 5-5h4a5 5 0 0 1 5 5v1"/><path d="M12 11v2"/></svg>
+        <span>Hệ thống</span>
+      </button>
+      <button type="button" class="admin-menu-item" role="menuitem" data-admin-panel="logs">
+        <svg class="admin-menu-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h4"/></svg>
+        <span>Logs hệ thống</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="wrap">
+      <div id="subpage-toolbar" class="subpage-toolbar hidden">
+        <button type="button" class="btn-back-dashboard" id="btn-back-dashboard">← Trang chủ</button>
+      </div>
+
+      <!-- Trang chủ: lưới bot (mặc định) -->
+      <div id="panel-dashboard">
+        <p id="grid-loading" class="sub">Đang tải…</p>
+        <div id="grid-empty" class="hidden sub">Chưa có bot nào.</div>
+        <div id="bot-grid" class="bot-grid hidden" role="list"></div>
+      </div>
+
+      <!-- Quản lý: danh sách + popup thêm/sửa -->
+      <div id="panel-manage" class="hidden">
+        <div class="card manage-toolbar">
+          <h2>Quản lý bot</h2>
+          <button type="button" class="btn-primary" id="btn-open-add-bot">+ Thêm bot</button>
+        </div>
+
+        <div class="card">
+          <h2>Danh sách bot</h2>
+          <p id="list-loading" class="sub hidden">Đang tải…</p>
+          <div id="list-empty" class="hidden sub">Chưa có bot nào.</div>
+          <table id="tbl" class="hidden">
+            <thead>
+              <tr>
+                <th>Tên</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Python bots -->
+      <div id="panel-python" class="hidden">
+        <div class="card manage-toolbar">
+          <h2>Bot (Python)</h2>
+          <button type="button" class="btn-primary" id="btn-open-add-python">+ Thêm bot Python</button>
+        </div>
+        <div class="card">
+          <h2>Danh sách bot Python</h2>
+          <p id="py-list-loading" class="sub hidden">Đang tải…</p>
+          <div id="py-list-empty" class="hidden sub">Chưa có bot Python nào.</div>
+          <table id="py-tbl" class="hidden">
+            <thead>
+              <tr>
+                <th>Tên</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+              </tr>
+            </thead>
+            <tbody id="py-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- System -->
+      <div id="panel-system" class="hidden">
+        <div class="card">
+          <h2>Hệ thống</h2>
+          <p class="sub">Deploy key để clone/pull repo private (GitHub Deploy keys — Read-only).</p>
+          <button type="button" class="btn-primary" id="btn-git-key-refresh">Lấy public key</button>
+          <pre id="git-key-pre" class="log-pre-wrap" aria-live="polite">(chưa tải)</pre>
+          <p class="hint" style="margin-top:12px">
+            Copy public key trên và add vào repo private: GitHub → Settings → Deploy keys → Add deploy key → tick <strong>Allow read access</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div id="panel-logs" class="hidden">
+        <div class="card">
+          <h2>Logs hệ thống</h2>
+          <p class="sub" id="system-log-sub">Log container Docker của Platform (hoặc file cấu hình trên server).</p>
+          <div class="log-toolbar">
+            <label>Số dòng <select id="system-log-lines" aria-label="Số dòng log">
+              <option value="100">100</option>
+              <option value="300" selected>300</option>
+              <option value="500">500</option>
+              <option value="800">800</option>
+              <option value="1500">1500</option>
+            </select></label>
+            <button type="button" class="btn-primary" id="btn-system-log-refresh">Làm mới</button>
+          </div>
+          <pre id="system-log-pre" class="log-pre-wrap" aria-live="polite">Chọn tab và bấm Làm mới để tải log.</pre>
+          <p id="system-log-err" class="err hidden"></p>
+          <p class="hint" style="margin-top:12px">
+            Mặc định: <code>docker logs</code> với tên container = hostname trong container (hoặc <code>PLATFORM_DOCKER_LOGS_CONTAINER</code>).
+            Nếu không có Docker trong container: đặt <code>PLATFORM_SYSTEM_LOG_PATH</code> trỏ tới file log để đọc phần cuối.
+          </p>
+        </div>
+      </div>
+  </div>
+
+  <!-- Popup: thêm bot -->
+  <div id="modal-add-bot" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog modal-dialog--form" role="dialog" aria-modal="true" aria-labelledby="modal-add-title">
+      <button type="button" class="modal-close" id="modal-add-close" aria-label="Đóng">&times;</button>
+      <h2 id="modal-add-title">Thêm bot</h2>
+      <div class="modal-tabs" role="tablist">
+        <button type="button" class="modal-tab active" id="add-tab-btn-zip" data-add-tab="zip" role="tab" aria-selected="true">Upload zip</button>
+        <button type="button" class="modal-tab" id="add-tab-btn-git" data-add-tab="git" role="tab" aria-selected="false">Clone GitHub</button>
+      </div>
+      <div id="add-tab-zip" class="add-tab-panel">
+        <div class="row">
+          <label for="add-modal-bot-name">Tên bot</label>
+          <input id="add-modal-bot-name" type="text" placeholder="Ví dụ: Đơn hàng A" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="add-modal-roles-zip">Quyền được xem bot (theo roles name)</label>
+          <div id="add-modal-roles-zip" class="role-checklist" role="group" aria-label="Quyền được xem bot"></div>
+          <p class="hint">Để trống = mọi tài khoản admin đều thấy. Có <code>admin</code> luôn thấy tất cả.</p>
+        </div>
+        <div class="row">
+          <label for="add-modal-desc-zip">Mô tả (hiển thị trên Dashboard)</label>
+          <textarea id="add-modal-desc-zip" class="modal-textarea" maxlength="2000" rows="2" placeholder="Ngắn gọn chức năng bot…"></textarea>
+        </div>
+        <div class="row">
+          <label for="add-modal-zip">server.zip (không chứa node_modules)</label>
+          <input id="add-modal-zip" type="file" accept=".zip,application/zip" />
+        </div>
+        <div class="row">
+          <label for="add-modal-icon-zip">Icon bot (bắt buộc — PNG, JPEG, WebP, GIF, SVG)</label>
+          <input id="add-modal-icon-zip" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+        </div>
+        <p id="create-msg" class="hidden"></p>
+        <p class="hint">Zip có <code>server/</code> + <code>index.html</code> + nên có <code>server/.env.example</code>. Sau upload sẽ mở form điền biến để tạo <code>server/.env</code>.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="btn-create">Upload &amp; triển khai</button>
+          <button type="button" class="btn-ghost" id="modal-add-cancel">Hủy</button>
+        </div>
+      </div>
+      <div id="add-tab-git" class="add-tab-panel hidden">
+        <div class="row">
+          <label for="add-modal-git-name">Tên bot</label>
+          <input id="add-modal-git-name" type="text" placeholder="Ví dụ: Bot từ Git" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="add-modal-roles-git">Quyền được xem bot (theo roles name)</label>
+          <div id="add-modal-roles-git" class="role-checklist" role="group" aria-label="Quyền được xem bot"></div>
+          <p class="hint">Để trống = mọi tài khoản admin đều thấy. Có <code>admin</code> luôn thấy tất cả.</p>
+        </div>
+        <div class="row">
+          <label for="add-modal-desc-git">Mô tả (hiển thị trên Dashboard)</label>
+          <textarea id="add-modal-desc-git" class="modal-textarea" maxlength="2000" rows="2" placeholder="Ngắn gọn chức năng bot…"></textarea>
+        </div>
+        <div class="row">
+          <label for="add-modal-git-url">URL repo (HTTPS)</label>
+          <input id="add-modal-git-url" type="url" placeholder="https://github.com/you/example-chat-bot" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="add-modal-git-branch">Nhánh (tuỳ chọn)</label>
+          <input id="add-modal-git-branch" type="text" placeholder="main" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="add-modal-icon-git">Icon bot (bắt buộc — PNG, JPEG, WebP, GIF, SVG)</label>
+          <input id="add-modal-icon-git" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+        </div>
+        <p id="clone-msg" class="hidden"></p>
+        <p class="hint">Chỉ <code>github.com</code> HTTPS. Private: <code>GITHUB_CLONE_TOKEN</code> trên server. Sau clone có thể điền <code>server/.env</code> theo <code>.env.example</code>.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="btn-clone">Clone &amp; triển khai</button>
+          <button type="button" class="btn-ghost" id="modal-add-cancel-2">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup: thêm bot Python -->
+  <div id="modal-add-python" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog modal-dialog--form" role="dialog" aria-modal="true" aria-labelledby="modal-add-python-title">
+      <button type="button" class="modal-close" id="modal-add-python-close" aria-label="Đóng">&times;</button>
+      <h2 id="modal-add-python-title">Thêm bot Python</h2>
+      <div class="modal-form-scroll">
+        <div class="row">
+          <label for="py-add-name">Tên bot</label>
+          <input id="py-add-name" type="text" placeholder="Ví dụ: Telegram Family Bot" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="py-add-git">Git URL (private OK — dùng deploy key)</label>
+          <input id="py-add-git" type="text" placeholder="git@github.com:owner/repo.git hoặc https://github.com/owner/repo" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="py-add-branch">Branch (tuỳ chọn)</label>
+          <input id="py-add-branch" type="text" placeholder="main" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="py-add-entry">Entrypoint</label>
+          <input id="py-add-entry" type="text" placeholder="bot.py" autocomplete="off" value="bot.py" />
+        </div>
+        <p id="py-add-msg" class="hidden"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="btn-py-create">Clone &amp; chạy</button>
+          <button type="button" class="btn-ghost" id="modal-add-python-cancel">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup: sửa tên bot -->
+  <div id="modal-edit-bot" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog modal-dialog--form" role="dialog" aria-modal="true" aria-labelledby="modal-edit-title">
+      <button type="button" class="modal-close" id="modal-edit-close" aria-label="Đóng">&times;</button>
+      <h2 id="modal-edit-title">Sửa bot</h2>
+      <div class="modal-form-scroll">
+        <input type="hidden" id="edit-bot-id" value="" />
+        <div class="row">
+          <label for="edit-bot-name">Tên hiển thị</label>
+          <input id="edit-bot-name" type="text" placeholder="Tên bot" maxlength="255" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="edit-bot-roles">Quyền được xem bot (theo roles name)</label>
+          <div id="edit-bot-roles" class="role-checklist" role="group" aria-label="Quyền được xem bot"></div>
+          <p class="hint">Để trống = mọi tài khoản admin đều thấy. Có <code>admin</code> luôn thấy tất cả.</p>
+        </div>
+        <div class="row">
+          <label for="edit-bot-desc">Mô tả (Dashboard)</label>
+          <textarea id="edit-bot-desc" class="modal-textarea" maxlength="2000" rows="2" placeholder="Mô tả ngắn…"></textarea>
+        </div>
+        <div class="row">
+          <label for="edit-bot-icon">Đổi icon (PNG, JPEG, WebP, GIF, SVG)</label>
+          <input id="edit-bot-icon" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml" />
+        </div>
+        <div class="edit-icon-preview-wrap">
+          <img id="edit-bot-icon-preview" class="edit-bot-icon-preview hidden" alt="Icon hiện tại" width="96" height="96" />
+        </div>
+        <p id="edit-msg" class="hidden"></p>
+        <p class="hint" id="edit-bot-id-hint"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="btn-save-edit">Lưu</button>
+          <button type="button" class="btn-ghost" id="modal-edit-cancel">Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup: log PM2 -->
+  <div id="modal-bot-logs" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog is-wide" role="dialog" aria-modal="true" aria-labelledby="modal-logs-title">
+      <button type="button" class="modal-close" id="modal-logs-close" aria-label="Đóng">&times;</button>
+      <h2 id="modal-logs-title">Log bot (PM2)</h2>
+      <p class="hint" id="modal-logs-sub" style="margin-bottom:12px"></p>
+      <div class="log-toolbar">
+        <label>số dòng <select id="log-lines-select" aria-label="Số dòng">
+          <option value="100">100</option>
+          <option value="200" selected>200</option>
+          <option value="400">400</option>
+          <option value="800">800</option>
+        </select></label>
+        <button type="button" class="btn-primary" id="btn-log-refresh">Làm mới</button>
+        <button type="button" class="btn-ghost" id="modal-logs-cancel">Đóng</button>
+      </div>
+      <div class="log-tabs" role="tablist">
+        <button type="button" class="log-tab active" id="log-tab-both" data-log-view="both">Cả hai</button>
+        <button type="button" class="log-tab" id="log-tab-out" data-log-view="out">stdout</button>
+        <button type="button" class="log-tab" id="log-tab-err" data-log-view="err">stderr</button>
+      </div>
+      <div id="log-paths-hint" class="log-paths"></div>
+      <pre id="log-pre" class="log-pre-wrap" aria-live="polite">Đang tải…</pre>
+      <p id="log-fetch-err" class="err hidden"></p>
+    </div>
+  </div>
+
+  <!-- Popup: cấu hình .env từ .env.example -->
+  <div id="modal-bot-env" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog is-wide" role="dialog" aria-modal="true" aria-labelledby="modal-env-title">
+      <button type="button" class="modal-close" id="modal-env-x" aria-label="Đóng">&times;</button>
+      <h2 id="modal-env-title">Cấu hình .env (theo .env.example)</h2>
+      <p class="hint" id="modal-env-sub" style="margin-bottom:12px"></p>
+      <div id="env-wizard-wait" class="sub">Đang chờ giải nén / clone và thư mục server…</div>
+      <p id="env-wizard-no-example" class="sub hidden"></p>
+      <div id="env-wizard-form-wrap" class="hidden">
+        <p class="hint" id="modal-env-file-hint"></p>
+        <div id="env-wizard-fields" class="env-wizard-scroll"></div>
+        <div class="env-skip-row">
+          <input type="checkbox" id="env-skip-restart" />
+          <label for="env-skip-restart" style="margin:0;cursor:pointer">Chỉ ghi file, không restart bot (tự restart sau)</label>
+        </div>
+        <p id="env-wizard-msg" class="hidden"></p>
+        <div class="modal-actions">
+          <button type="button" class="btn-primary" id="btn-env-save">Lưu server/.env</button>
+          <button type="button" class="btn-ghost" id="modal-env-skip">Bỏ qua</button>
+          <button type="button" class="btn-ghost" id="modal-env-close">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Khóa tab Quản lý khi server đặt PLATFORM_MANAGE_TAB_PASSWORD -->
+  <div id="modal-manage-lock" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-manage-lock-title">
+      <button type="button" class="modal-close" id="modal-manage-lock-x" aria-label="Đóng">&times;</button>
+      <h2 id="modal-manage-lock-title">Mật khẩu Quản lý bot</h2>
+      <p class="hint" style="margin-bottom:14px">
+        Nhập mật khẩu cấu hình trên server (<code>PLATFORM_MANAGE_TAB_PASSWORD</code>) để mở tab Quản lý bot.
+      </p>
+      <div class="row">
+        <label for="manage-lock-password">Mật khẩu</label>
+        <input id="manage-lock-password" type="password" autocomplete="current-password" />
+      </div>
+      <p id="manage-lock-msg" class="hidden"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" id="btn-manage-lock-submit">Vào Quản lý</button>
+        <button type="button" class="btn-ghost" id="modal-manage-lock-cancel">Hủy</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/chat-session.js"></script>
+  <script>
+    const LS = 'platform_token';
+    const NAV_STORAGE = 'platform_admin_panel';
+    const MANAGE_UNLOCK_SS = 'platform_manage_tab_unlocked';
+    const PYTHON_UNLOCK_SS = 'platform_python_tab_unlocked';
+
+    const $ = (id) => document.getElementById(id);
+
+    /** Decode payload token platform (base64url JSON). */
+    function platformSessionPayloadFromToken() {
+      const token = localStorage.getItem(LS);
+      if (!token || typeof token !== 'string') return null;
+      try {
+        let b64 = token.replace(/-/g, '+').replace(/_/g, '/');
+        while (b64.length % 4) b64 += '=';
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        return JSON.parse(new TextDecoder().decode(bytes));
+      } catch {
+        return null;
+      }
+    }
+
+    /** Đọc trường `u` từ token — chỉ để hiển thị. */
+    function platformUsernameFromStoredToken() {
+      const o = platformSessionPayloadFromToken();
+      return o && typeof o.u === 'string' ? o.u.trim() : '';
+    }
+
+    /**
+     * `null` = token không có mảng `r` (đăng nhập local / token cũ) → quyền đầy đủ trên UI.
+     * Mảng = roles name từ Basso.
+     */
+    function platformRoleNamesFromStoredToken() {
+      const o = platformSessionPayloadFromToken();
+      if (!o) return [];
+      if (!Object.prototype.hasOwnProperty.call(o, 'r')) return null;
+      if (!Array.isArray(o.r)) return [];
+      return o.r
+        .filter((x) => typeof x === 'string')
+        .map((x) => x.trim())
+        .filter(Boolean);
+    }
+
+    function canSeeAdminIconMenu() {
+      const r = platformRoleNamesFromStoredToken();
+      if (r === null) return true;
+      return r.includes('admin') || r.includes('bot_admin');
+    }
+
+    function updateAdminMenuVisibility() {
+      const show = canSeeAdminIconMenu();
+      const wrap = $('admin-menu-wrap');
+      if (wrap) wrap.classList.toggle('hidden', !show);
+      document.body.classList.toggle('has-admin-fab', Boolean(show));
+    }
+
+    function updateTopbarUser() {
+      const el = $('topbar-user');
+      if (!el) return;
+      el.textContent = '';
+      const name = platformUsernameFromStoredToken();
+      if (name) {
+        el.appendChild(document.createTextNode('Tài khoản: '));
+        const strong = document.createElement('strong');
+        strong.textContent = name;
+        el.appendChild(strong);
+      } else {
+        el.textContent = 'Đã đăng nhập';
+      }
+    }
+
+    let cachedBots = [];
+    let editIconPreviewObjectUrl = null;
+
+    function revokeEditIconPreview() {
+      if (editIconPreviewObjectUrl) {
+        URL.revokeObjectURL(editIconPreviewObjectUrl);
+        editIconPreviewObjectUrl = null;
+      }
+    }
+
+    let managePasswordRequired = false;
+    let pythonPasswordRequired = false;
+    /** @type {{ name: string, label: string }[]} */
+    let roleCatalog = [];
+
+    function clearManageTabUnlock() {
+      try {
+        sessionStorage.removeItem(MANAGE_UNLOCK_SS);
+        sessionStorage.removeItem(PYTHON_UNLOCK_SS);
+      } catch {
+        /* */
+      }
+    }
+
+    async function fetchPlatformMeta() {
+      try {
+        const r = await fetch('/platform/api/meta');
+        const d = await r.json();
+        if (d && d.success) {
+          managePasswordRequired = Boolean(d.manageTabPasswordRequired);
+          pythonPasswordRequired = Boolean(d.pythonTabPasswordRequired);
+          roleCatalog = Array.isArray(d.roles) ? d.roles.filter((x) => x && x.name && x.label) : [];
+        }
+      } catch {
+        managePasswordRequired = false;
+        pythonPasswordRequired = false;
+        roleCatalog = [];
+      }
+    }
+
+    function checkboxValues(container) {
+      if (!container) return [];
+      const boxes = container.querySelectorAll('input[type="checkbox"][data-role-name]');
+      const out = [];
+      boxes.forEach((b) => {
+        if (b.checked) out.push(String(b.getAttribute('data-role-name') || ''));
+      });
+      return out.filter(Boolean);
+    }
+
+    function setCheckboxValues(container, values) {
+      if (!container) return;
+      const want = new Set((values || []).map((x) => String(x)));
+      const boxes = container.querySelectorAll('input[type="checkbox"][data-role-name]');
+      boxes.forEach((b) => {
+        const name = String(b.getAttribute('data-role-name') || '');
+        b.checked = want.has(name);
+      });
+    }
+
+    function renderRoleCheckboxes() {
+      const fallback = [
+        { name: 'admin', label: 'Quản trị viên' },
+        { name: 'bot_admin', label: 'Quản trị bot' },
+        { name: 'order_manager', label: 'Quản lý đơn hàng' },
+        { name: 'shop_manager', label: 'Quản lý sản phẩm' },
+        { name: 'editor', label: 'Quản trị nội dung' },
+        { name: 'customer', label: 'Khách hàng' },
+        { name: 'web_order', label: 'Quản lý đơn admin' },
+        { name: 'inventory_manager', label: 'Quản lý kho' },
+        { name: 'accounting_manager', label: 'Kế toán' },
+        { name: 'alerts.view', label: 'Xem thông báo' },
+      ];
+      const roles = roleCatalog.length ? roleCatalog : fallback;
+      const containers = [$('add-modal-roles-zip'), $('add-modal-roles-git'), $('edit-bot-roles')].filter(Boolean);
+      containers.forEach((box) => {
+        const prev = checkboxValues(box);
+        box.innerHTML = roles
+          .map((r, i) => {
+            const id = `${box.id}--role-${i}`;
+            return (
+              `<label class="role-item" for="${escapeHtml(id)}">` +
+              `<input id="${escapeHtml(id)}" type="checkbox" data-role-name="${escapeHtml(r.name)}" />` +
+              `<span>${escapeHtml(r.label)} <span class="hint">(${escapeHtml(r.name)})</span></span>` +
+              `</label>`
+            );
+          })
+          .join('');
+        setCheckboxValues(box, prev);
+      });
+    }
+
+    let pollTimer = null;
+    function startPoll() {
+      stopPoll();
+      pollTimer = setInterval(loadBots, 4000);
+    }
+    function stopPoll() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = null;
+    }
+
+    function sessionExpired() {
+      stopPoll();
+      try {
+        fetch('/platform/api/auth/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          keepalive: true,
+        });
+      } catch (e) {
+        /* */
+      }
+      try {
+        localStorage.removeItem('ai_chat_user');
+        sessionStorage.removeItem('ai_chat_user');
+        localStorage.removeItem(LS);
+        clearManageTabUnlock();
+      } catch (e) {
+        /* */
+      }
+      const next =
+        (location.pathname || '/admin/dashboard.html') + (location.search || '');
+      location.replace('/admin/login.html?next=' + encodeURIComponent(next));
+    }
+
+    /** Bot/template chỉ xóa ai_chat_user; Platform đăng xuất admin khi phát hiện phiên chat mất (tab khác hoặc quay lại tab). */
+    let chatRevokeSync = false;
+    let lastLocalChatPresent = false;
+    function snapshotLocalChatFlag() {
+      lastLocalChatPresent = Boolean(localStorage.getItem('ai_chat_user'));
+    }
+    function logoutAdminBecauseChatRevoked() {
+      if (chatRevokeSync) return;
+      chatRevokeSync = true;
+      stopPoll();
+      try {
+        fetch('/platform/api/auth/logout', {
+          method: 'POST',
+          credentials: 'same-origin',
+          keepalive: true,
+        });
+      } catch (e) {
+        /* */
+      }
+      try {
+        localStorage.removeItem(LS);
+      } catch (e) {
+        /* */
+      }
+      location.replace('/admin/login.html');
+    }
+
+    const api = async (path, opts = {}) => {
+      const token = localStorage.getItem(LS);
+      const headers = { ...(opts.headers || {}) };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const r = await fetch('/platform/api' + path, {
+        ...opts,
+        headers,
+        credentials: 'same-origin',
+      });
+      if (r.status === 401) sessionExpired();
+      return r;
+    };
+
+    function botChatLoginPage(chatBase) {
+      const s = String(chatBase || '').trim();
+      if (!s) return '/login.html';
+      try {
+        const u = new URL(s, location.href);
+        let path = u.pathname;
+        if (path.endsWith('/index.html')) {
+          path = path.slice(0, -'index.html'.length) + 'login.html';
+        } else if (path.endsWith('/')) {
+          path = path + 'login.html';
+        } else {
+          path = path.replace(/\/?[^/]*$/, '/login.html');
+        }
+        u.pathname = path;
+        return u.href;
+      } catch {
+        if (/\/index\.html$/i.test(s)) return s.replace(/\/index\.html$/i, '/login.html');
+        const base = s.endsWith('/') ? s : s + '/';
+        return base + 'login.html';
+      }
+    }
+
+    /** Đã có phiên chat → mở thẳng index.html; chưa có → trang login bot. */
+    function botOpenTargetUrl(chatBase) {
+      const s = String(chatBase || '').trim();
+      if (!s) return '/login.html';
+      try {
+        const hasChat = Boolean(localStorage.getItem('ai_chat_user') || sessionStorage.getItem('ai_chat_user'));
+        if (hasChat) return s;
+      } catch {
+        /* */
+      }
+      return botChatLoginPage(s);
+    }
+
+    function setActivePanel(panel) {
+      const isDash = panel === 'dashboard';
+      const isManage = panel === 'manage';
+      const isPython = panel === 'python';
+      const isSystem = panel === 'system';
+      const isLogs = panel === 'logs';
+      $('panel-dashboard').classList.toggle('hidden', !isDash);
+      $('panel-manage').classList.toggle('hidden', !isManage);
+      $('panel-python').classList.toggle('hidden', !isPython);
+      $('panel-system').classList.toggle('hidden', !isSystem);
+      $('panel-logs').classList.toggle('hidden', !isLogs);
+      const toolbar = $('subpage-toolbar');
+      if (toolbar) toolbar.classList.toggle('hidden', isDash);
+      document.querySelectorAll('[data-admin-panel]').forEach((el) => {
+        const p = el.getAttribute('data-admin-panel');
+        el.classList.toggle('active', Boolean(p) && p === panel);
+      });
+      closeAdminMenuPanel();
+      localStorage.setItem(NAV_STORAGE, panel);
+      if (isLogs) loadSystemLogs();
+      if (isPython) loadPythonBots();
+      if (isSystem) loadGitPublicKey();
+    }
+
+    let adminMenuOpen = false;
+    function closeAdminMenuPanel() {
+      const panelEl = $('admin-menu-panel');
+      const toggle = $('btn-admin-menu-toggle');
+      if (panelEl) panelEl.classList.add('hidden');
+      adminMenuOpen = false;
+      if (toggle) toggle.setAttribute('aria-expanded', 'false');
+    }
+    function openAdminMenuPanel() {
+      const panelEl = $('admin-menu-panel');
+      const toggle = $('btn-admin-menu-toggle');
+      if (panelEl) panelEl.classList.remove('hidden');
+      adminMenuOpen = true;
+      if (toggle) toggle.setAttribute('aria-expanded', 'true');
+    }
+    function toggleAdminMenuPanel() {
+      if (adminMenuOpen) closeAdminMenuPanel();
+      else openAdminMenuPanel();
+    }
+
+    function goHomeDashboard() {
+      closeAdminMenuPanel();
+      setActivePanel('dashboard');
+    }
+
+    let lockTargetPanel = 'manage';
+    function openManageLockModal(panel) {
+      lockTargetPanel = panel || 'manage';
+      const title = $('modal-manage-lock-title');
+      const submit = $('btn-manage-lock-submit');
+      if (lockTargetPanel === 'python') {
+        if (title) title.textContent = 'Mật khẩu Bot (Python)';
+        if (submit) submit.textContent = 'Vào Bot (Python)';
+      } else {
+        if (title) title.textContent = 'Mật khẩu Quản lý bot';
+        if (submit) submit.textContent = 'Vào Quản lý';
+      }
+      $('modal-manage-lock').classList.remove('hidden');
+      $('modal-manage-lock').setAttribute('aria-hidden', 'false');
+      $('manage-lock-password').value = '';
+      $('manage-lock-msg').classList.add('hidden');
+      $('manage-lock-password').focus();
+    }
+
+    function closeManageLockModal() {
+      $('modal-manage-lock').classList.add('hidden');
+      $('modal-manage-lock').setAttribute('aria-hidden', 'true');
+    }
+
+    function isManageTabUnlocked() {
+      try {
+        return sessionStorage.getItem(MANAGE_UNLOCK_SS) === '1';
+      } catch {
+        return false;
+      }
+    }
+
+    function isPythonTabUnlocked() {
+      try {
+        return sessionStorage.getItem(PYTHON_UNLOCK_SS) === '1';
+      } catch {
+        return false;
+      }
+    }
+
+    function requestManagePanel() {
+      if (!managePasswordRequired) {
+        setActivePanel('manage');
+        return;
+      }
+      if (isManageTabUnlocked()) {
+        setActivePanel('manage');
+        return;
+      }
+      openManageLockModal('manage');
+    }
+
+    function requestPythonPanel() {
+      if (!pythonPasswordRequired) {
+        setActivePanel('python');
+        return;
+      }
+      if (isPythonTabUnlocked()) {
+        setActivePanel('python');
+        return;
+      }
+      openManageLockModal('python');
+    }
+
+    $('link-home').addEventListener('click', (e) => {
+      e.preventDefault();
+      goHomeDashboard();
+    });
+    $('btn-back-dashboard').onclick = () => goHomeDashboard();
+
+    $('btn-admin-menu-toggle').addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!canSeeAdminIconMenu()) return;
+      toggleAdminMenuPanel();
+    });
+    $('admin-menu-panel').addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const btn = ev.target && ev.target.closest && ev.target.closest('[data-admin-panel]');
+      if (!btn) return;
+      const panel = btn.getAttribute('data-admin-panel');
+      closeAdminMenuPanel();
+      if (panel === 'manage') requestManagePanel();
+      else if (panel === 'python') requestPythonPanel();
+      else if (panel === 'system') setActivePanel('system');
+      else if (panel === 'logs') setActivePanel('logs');
+    });
+
+    document.addEventListener('click', () => {
+      if (adminMenuOpen) closeAdminMenuPanel();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAdminMenuPanel();
+    });
+
+    async function loadSystemLogs() {
+      const pre = $('system-log-pre');
+      const errEl = $('system-log-err');
+      const sub = $('system-log-sub');
+      errEl.classList.add('hidden');
+      errEl.textContent = '';
+      const lines = ($('system-log-lines') && $('system-log-lines').value) || '300';
+      pre.textContent = 'Đang tải…';
+      const token = localStorage.getItem(LS);
+      const headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      let r;
+      try {
+        r = await fetch('/platform/api/system/docker-logs?lines=' + encodeURIComponent(lines), {
+          credentials: 'same-origin',
+          headers,
+        });
+      } catch {
+        pre.textContent = '';
+        errEl.textContent = 'Lỗi kết nối';
+        errEl.classList.remove('hidden');
+        sub.textContent = 'Không gọi được API log hệ thống.';
+        return;
+      }
+      if (r.status === 401) {
+        sessionExpired();
+        return;
+      }
+      const d = await r.json().catch(() => ({}));
+      if (!d.success) {
+        errEl.textContent = (d.message || 'Lỗi') + (d.hint ? ' — ' + d.hint : '');
+        errEl.classList.remove('hidden');
+        pre.textContent = '';
+        sub.textContent = d.containerTried
+          ? 'Đã thử container: ' + d.containerTried
+          : 'Không đọc được log.';
+        return;
+      }
+      pre.textContent = d.text != null ? String(d.text) : '(trống)';
+      let meta = '';
+      if (d.source === 'docker' && d.container) meta = 'Nguồn: Docker · container: ' + d.container;
+      else if (d.source === 'file' && d.path) meta = 'Nguồn: file · ' + d.path;
+      if (d.note) meta = meta ? meta + ' · ' + d.note : d.note;
+      sub.textContent = meta || 'Log hệ thống';
+    }
+
+    $('btn-system-log-refresh').onclick = () => loadSystemLogs();
+    $('system-log-lines').addEventListener('change', () => {
+      if (!$('panel-logs').classList.contains('hidden')) loadSystemLogs();
+    });
+
+    function closeAddModal() {
+      $('modal-add-bot').classList.add('hidden');
+      $('modal-add-bot').setAttribute('aria-hidden', 'true');
+    }
+    function openAddModal() {
+      $('create-msg').classList.add('hidden');
+      $('clone-msg').classList.add('hidden');
+      setAddModalTab('zip');
+      $('add-modal-icon-zip').value = '';
+      $('add-modal-icon-git').value = '';
+      $('add-modal-desc-zip').value = '';
+      $('add-modal-desc-git').value = '';
+      $('modal-add-bot').classList.remove('hidden');
+      $('modal-add-bot').setAttribute('aria-hidden', 'false');
+      $('add-modal-bot-name').focus();
+    }
+    function setAddModalTab(tab) {
+      const isZip = tab === 'zip';
+      $('add-tab-zip').classList.toggle('hidden', !isZip);
+      $('add-tab-git').classList.toggle('hidden', isZip);
+      $('add-tab-btn-zip').classList.toggle('active', isZip);
+      $('add-tab-btn-git').classList.toggle('active', !isZip);
+      $('add-tab-btn-zip').setAttribute('aria-selected', isZip ? 'true' : 'false');
+      $('add-tab-btn-git').setAttribute('aria-selected', !isZip ? 'true' : 'false');
+    }
+    $('btn-open-add-bot').onclick = () => openAddModal();
+    $('modal-add-close').onclick = () => closeAddModal();
+    $('modal-add-cancel').onclick = () => closeAddModal();
+    $('modal-add-cancel-2').onclick = () => closeAddModal();
+    $('add-tab-btn-zip').onclick = () => setAddModalTab('zip');
+    $('add-tab-btn-git').onclick = () => setAddModalTab('git');
+    $('modal-add-bot').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-add-bot').addEventListener('click', () => closeAddModal());
+
+    function closeEditModal() {
+      revokeEditIconPreview();
+      $('edit-bot-icon').value = '';
+      const prev = $('edit-bot-icon-preview');
+      prev.classList.add('hidden');
+      prev.removeAttribute('src');
+      $('modal-edit-bot').classList.add('hidden');
+      $('modal-edit-bot').setAttribute('aria-hidden', 'true');
+    }
+    function openEditModal(id) {
+      const b = cachedBots.find((x) => x.id === id);
+      if (!b) return;
+      revokeEditIconPreview();
+      $('edit-bot-icon').value = '';
+      const prev = $('edit-bot-icon-preview');
+      prev.classList.add('hidden');
+      prev.removeAttribute('src');
+      $('edit-bot-id').value = id;
+      $('edit-bot-name').value = b.name;
+      setCheckboxValues($('edit-bot-roles'), Array.isArray(b.allowedRoleNames) ? b.allowedRoleNames : []);
+      $('edit-bot-desc').value = (b.description || '').trim();
+      $('edit-bot-id-hint').textContent = 'ID: ' + id;
+      $('edit-msg').classList.add('hidden');
+      $('modal-edit-bot').classList.remove('hidden');
+      $('modal-edit-bot').setAttribute('aria-hidden', 'false');
+      $('edit-bot-name').focus();
+      if (b.hasIcon) {
+        const token = localStorage.getItem(LS);
+        const headers = token ? { Authorization: 'Bearer ' + token } : {};
+        fetch('/platform/api/bots/' + encodeURIComponent(id) + '/icon', {
+          credentials: 'same-origin',
+          headers,
+        })
+          .then((r) => (r.ok ? r.blob() : null))
+          .then((blob) => {
+            if (!blob) return;
+            editIconPreviewObjectUrl = URL.createObjectURL(blob);
+            prev.src = editIconPreviewObjectUrl;
+            prev.classList.remove('hidden');
+          })
+          .catch(() => {
+            /* */
+          });
+      }
+    }
+    $('modal-edit-close').onclick = () => closeEditModal();
+    $('modal-edit-cancel').onclick = () => closeEditModal();
+    $('modal-edit-bot').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-edit-bot').addEventListener('click', () => closeEditModal());
+
+    let logsBotId = null;
+    let logsCache = null;
+
+    function closeLogsModal() {
+      $('modal-bot-logs').classList.add('hidden');
+      $('modal-bot-logs').setAttribute('aria-hidden', 'true');
+      logsBotId = null;
+      logsCache = null;
+    }
+    function openLogsModal(id) {
+      const b = cachedBots.find((x) => x.id === id);
+      logsBotId = id;
+      $('modal-logs-sub').textContent = b ? `${b.name} — ${id}` : id;
+      logsCache = null;
+      $('log-fetch-err').classList.add('hidden');
+      setLogViewTab('both', false);
+      $('modal-bot-logs').classList.remove('hidden');
+      $('modal-bot-logs').setAttribute('aria-hidden', 'false');
+      fetchBotLogs();
+    }
+    function setLogViewTab(view, rerender) {
+      document.querySelectorAll('#modal-bot-logs .log-tab').forEach((el) => {
+        el.classList.toggle('active', el.getAttribute('data-log-view') === view);
+      });
+      if (rerender !== false) renderLogPanel();
+    }
+    function renderLogPanel() {
+      const pre = $('log-pre');
+      if (!logsCache) {
+        pre.textContent = logsBotId ? 'Đang tải…' : '';
+        return;
+      }
+      const tab = document.querySelector('#modal-bot-logs .log-tab.active');
+      const view = (tab && tab.getAttribute('data-log-view')) || 'both';
+      let text = '';
+      if (view === 'both') {
+        text =
+          '--- stdout ---\n' +
+          (logsCache.out || '(trống)') +
+          '\n\n--- stderr ---\n' +
+          (logsCache.err || '(trống)');
+      } else if (view === 'out') {
+        text = logsCache.out || '(trống)';
+      } else {
+        text = logsCache.err || '(trống)';
+      }
+      pre.textContent = text;
+      pre.classList.toggle('is-err', view === 'err');
+      const op = logsCache.outPath || '—';
+      const ep = logsCache.errPath || '—';
+      $('log-paths-hint').textContent = 'stdout: ' + op + ' · stderr: ' + ep;
+    }
+    async function fetchBotLogs() {
+      if (!logsBotId) return;
+      $('log-fetch-err').classList.add('hidden');
+      $('log-pre').textContent = 'Đang tải…';
+      const linesSel = $('log-lines-select');
+      const lines = (linesSel && linesSel.value) || '200';
+      const r = await api(
+        '/bots/' +
+          encodeURIComponent(logsBotId) +
+          '/logs?lines=' +
+          encodeURIComponent(lines) +
+          '&which=both'
+      );
+      if (r.status === 401) {
+        closeLogsModal();
+        return;
+      }
+      const d = await r.json();
+      if (!d.success) {
+        $('log-fetch-err').textContent = d.message || 'Lỗi';
+        $('log-fetch-err').classList.remove('hidden');
+        logsCache = null;
+        $('log-pre').textContent = '';
+        return;
+      }
+      logsCache = d;
+      renderLogPanel();
+    }
+
+    $('modal-logs-close').onclick = () => closeLogsModal();
+    $('modal-logs-cancel').onclick = () => closeLogsModal();
+    // Nếu modal logs đang mở cho python bot, nút refresh và đổi lines/tab sẽ gọi API python.
+    async function refreshLogsModal() {
+      if (!logsBotId) return;
+      if (String(logsBotId).startsWith('py:')) {
+        const pyId = String(logsBotId).slice(3);
+        await fetchPyBotLogs(pyId);
+        return;
+      }
+      await fetchBotLogs();
+    }
+    $('btn-log-refresh').onclick = () => refreshLogsModal();
+    $('log-lines-select').addEventListener('change', () => {
+      if (!$('modal-bot-logs').classList.contains('hidden') && logsBotId) void refreshLogsModal();
+    });
+    document.querySelectorAll('#modal-bot-logs .log-tab').forEach((btn) => {
+      btn.onclick = () => {
+        const v = btn.getAttribute('data-log-view');
+        if (v) setLogViewTab(v, false);
+        void refreshLogsModal();
+      };
+    });
+    $('modal-bot-logs').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-bot-logs').addEventListener('click', () => closeLogsModal());
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!$('modal-add-bot').classList.contains('hidden')) closeAddModal();
+      else if (!$('modal-edit-bot').classList.contains('hidden')) closeEditModal();
+      else if (!$('modal-bot-logs').classList.contains('hidden')) closeLogsModal();
+      else if (!$('modal-bot-env').classList.contains('hidden')) closeEnvModal();
+      else if (!$('modal-manage-lock').classList.contains('hidden')) closeManageLockModal();
+    });
+
+    $('modal-manage-lock-x').onclick = () => closeManageLockModal();
+    $('modal-manage-lock-cancel').onclick = () => closeManageLockModal();
+    $('modal-manage-lock').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-manage-lock').addEventListener('click', () => closeManageLockModal());
+
+    $('manage-lock-password').addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      $('btn-manage-lock-submit').click();
+    });
+
+    $('btn-manage-lock-submit').onclick = async () => {
+      const msg = $('manage-lock-msg');
+      msg.classList.add('hidden');
+      const pw = $('manage-lock-password').value;
+      const token = localStorage.getItem(LS);
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const verifyUrl =
+        lockTargetPanel === 'python' ? '/platform/api/auth/verify-python' : '/platform/api/auth/verify-manage';
+      const r = await fetch(verifyUrl, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers,
+        body: JSON.stringify({ password: pw }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (r.status === 401 && d.message) {
+        msg.textContent = d.message;
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      if (r.status === 401) {
+        sessionExpired();
+        return;
+      }
+      if (!d.success) {
+        msg.textContent = d.message || 'Không xác thực được';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      try {
+        if (lockTargetPanel === 'python') sessionStorage.setItem(PYTHON_UNLOCK_SS, '1');
+        else sessionStorage.setItem(MANAGE_UNLOCK_SS, '1');
+      } catch {
+        /* */
+      }
+      closeManageLockModal();
+      setActivePanel(lockTargetPanel === 'python' ? 'python' : 'manage');
+    };
+
+    $('btn-logout').onclick = async () => {
+      stopPoll();
+      clearManageTabUnlock();
+      if (typeof logoutChatAndPlatform === 'function') {
+        await logoutChatAndPlatform({ redirectTo: '/admin/login.html' });
+      } else {
+        try {
+          localStorage.removeItem('ai_chat_user');
+          sessionStorage.removeItem('ai_chat_user');
+          localStorage.removeItem(LS);
+          await fetch('/platform/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+        } catch {
+          /* */
+        }
+        location.replace('/admin/login.html');
+      }
+    };
+
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    let envWizardBotId = null;
+
+    function closeEnvModal() {
+      $('modal-bot-env').classList.add('hidden');
+      $('modal-bot-env').setAttribute('aria-hidden', 'true');
+      envWizardBotId = null;
+    }
+
+    async function pollEnvWizardReady(botId) {
+      const deadline = Date.now() + 120000;
+      while (Date.now() < deadline) {
+        const r = await api('/bots/' + encodeURIComponent(botId) + '/env-wizard');
+        if (r.status === 401) throw new Error('Phiên đăng nhập hết hạn');
+        const d = await r.json();
+        if (!d.success) throw new Error(d.message || 'Lỗi API env-wizard');
+        if (d.workDirReady) return d;
+        if (d.botStatus === 'error') {
+          throw new Error(
+            'Bot lỗi khi triển khai — không mở wizard. Xem trạng thái bot rồi bấm «.env» sau.'
+          );
+        }
+        await new Promise((res) => setTimeout(res, 1000));
+      }
+      throw new Error(
+        'Hết thời gian chờ thư mục server (2 phút). Kiểm tra bot rồi mở lại «.env».'
+      );
+    }
+
+    async function openEnvWizard(botId) {
+      envWizardBotId = botId;
+      const b = cachedBots.find((x) => x.id === botId);
+      $('modal-env-sub').textContent = b ? `${b.name} — ${botId}` : botId;
+      $('env-wizard-wait').classList.remove('hidden');
+      $('env-wizard-no-example').classList.add('hidden');
+      $('env-wizard-form-wrap').classList.add('hidden');
+      $('env-wizard-msg').classList.add('hidden');
+      $('env-skip-restart').checked = false;
+      $('modal-bot-env').classList.remove('hidden');
+      $('modal-bot-env').setAttribute('aria-hidden', 'false');
+      $('env-wizard-fields').innerHTML = '';
+
+      try {
+        const d = await pollEnvWizardReady(botId);
+        $('env-wizard-wait').classList.add('hidden');
+        if (!d.hasExample || !d.variables || !d.variables.length) {
+          $('env-wizard-no-example').textContent =
+            d.message ||
+            'Không có server/.env.example hoặc không có biến — tạo server/.env thủ công trên máy chủ nếu cần.';
+          $('env-wizard-no-example').classList.remove('hidden');
+          return;
+        }
+        $('modal-env-file-hint').textContent =
+          'Biến trùng với .env của Platform được điền sẵn. Các ô viền vàng cần bạn bổ sung. PORT do PM2 gán — không có trong form. File: server/.env.';
+        const box = $('env-wizard-fields');
+        box.innerHTML = d.variables
+          .map((v, i) => {
+            const id = 'env-inp-' + i;
+            const hint = v.hint ? `<div class="hint-line">${escapeHtml(v.hint)}</div>` : '';
+            const ph = v.exampleValue ? 'vd. ' + String(v.exampleValue).slice(0, 80) : '';
+            const type = v.sensitive ? 'password' : 'text';
+            const val = escapeHtml(String(v.currentValue ?? ''));
+            const need = v.needsUserInput ? ' needs-user' : '';
+            return (
+              `<div class="env-field${need}"><label class="key" for="${id}">${escapeHtml(v.key)}</label>` +
+              hint +
+              `<input id="${id}" type="${type}" autocomplete="off" data-env-key="${escapeHtml(v.key)}" value="${val}" placeholder="${escapeHtml(ph)}" /></div>`
+            );
+          })
+          .join('');
+        $('env-wizard-form-wrap').classList.remove('hidden');
+      } catch (e) {
+        $('env-wizard-wait').classList.add('hidden');
+        $('env-wizard-msg').textContent = e.message || 'Lỗi';
+        $('env-wizard-msg').className = 'err';
+        $('env-wizard-msg').classList.remove('hidden');
+      }
+    }
+
+    $('btn-env-save').onclick = async () => {
+      if (!envWizardBotId) return;
+      $('env-wizard-msg').classList.add('hidden');
+      const inputs = document.querySelectorAll('#env-wizard-fields input[data-env-key]');
+      const values = {};
+      inputs.forEach((inp) => {
+        values[inp.getAttribute('data-env-key')] = inp.value;
+      });
+      const isPy = String(envWizardBotId).startsWith('py:');
+      const id = isPy ? String(envWizardBotId).slice(3) : String(envWizardBotId);
+      const endpoint = isPy ? '/python-bots/' + encodeURIComponent(id) + '/env' : '/bots/' + encodeURIComponent(id) + '/env';
+      const r = await api(endpoint, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          values,
+          skipRestart: $('env-skip-restart').checked,
+        }),
+      });
+      const d = await r.json();
+      if (!d.success) {
+        $('env-wizard-msg').textContent = d.message || 'Lỗi';
+        $('env-wizard-msg').className = 'err';
+        $('env-wizard-msg').classList.remove('hidden');
+        return;
+      }
+      $('env-wizard-msg').textContent =
+        d.message || (isPy ? 'Đã lưu .env. Hãy bấm Reload bot Python để restart.' : d.restarted ? 'Đã lưu và restart bot.' : 'Đã lưu server/.env.');
+      $('env-wizard-msg').className = 'ok';
+      $('env-wizard-msg').classList.remove('hidden');
+      if (isPy) loadPythonBots();
+      else loadBots();
+    };
+
+    $('modal-env-x').onclick = () => closeEnvModal();
+    $('modal-env-close').onclick = () => closeEnvModal();
+    $('modal-env-skip').onclick = () => closeEnvModal();
+    $('modal-bot-env').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-bot-env').addEventListener('click', () => closeEnvModal());
+
+    function bindBotActions(container) {
+      container.onclick = (ev) => {
+        const t = ev.target;
+        if (!(t instanceof HTMLElement)) return;
+        const openHost = t.closest && t.closest('[data-open-bot]');
+        const openBot = openHost && openHost.getAttribute('data-open-bot');
+        if (openBot) {
+          window.open(botOpenTargetUrl(openBot), '_blank', 'noopener');
+          return;
+        }
+        const pop = t.getAttribute('data-popup');
+        if (pop) {
+          window.open(botOpenTargetUrl(pop), 'bot-chat', 'width=520,height=820,noopener');
+          return;
+        }
+        const full = t.getAttribute('data-full');
+        if (full) {
+          window.open(botOpenTargetUrl(full), '_blank', 'noopener');
+          return;
+        }
+        const edi = t.getAttribute('data-edit');
+        if (edi) {
+          openEditModal(edi);
+          return;
+        }
+        const lg = t.getAttribute('data-logs');
+        if (lg) {
+          openLogsModal(lg);
+          return;
+        }
+        const envId = t.getAttribute('data-env');
+        if (envId) {
+          openEnvWizard(envId);
+          return;
+        }
+        const rld = t.getAttribute('data-reload');
+        if (rld) reloadBot(rld);
+        const rid = t.getAttribute('data-restart');
+        if (rid) restartBot(rid);
+        const did = t.getAttribute('data-del');
+        if (did) deleteBot(did);
+      };
+    }
+
+    bindBotActions($('tbody'));
+    bindBotActions($('bot-grid'));
+
+    function botIconUrl(b) {
+      if (!b || !b.id) return '';
+      // Dùng cookie phiên admin (HttpOnly). Cache bust theo updatedAt để đổi icon không bị cache quá lâu.
+      const v = b.updatedAt ? encodeURIComponent(String(b.updatedAt)) : '';
+      return `/platform/api/bots/${encodeURIComponent(b.id)}/icon${v ? `?v=${v}` : ''}`;
+    }
+
+    function renderBotGrid(bots) {
+      const grid = $('bot-grid');
+      const empty = $('grid-empty');
+      const loading = $('grid-loading');
+      loading.classList.add('hidden');
+      if (!bots.length) {
+        empty.classList.remove('hidden');
+        grid.classList.add('hidden');
+        grid.innerHTML = '';
+        return;
+      }
+      empty.classList.add('hidden');
+      grid.classList.remove('hidden');
+      grid.innerHTML = bots
+        .map((b) => {
+          const st = b.status || 'pending';
+          let tileMod = '';
+          if (st === 'running') tileMod = ' is-running';
+          else if (st === 'error') tileMod = ' is-error';
+          const dis = !b.chatUrl ? ' disabled' : '';
+          const openAttr = b.chatUrl ? ` data-open-bot="${escapeHtml(b.chatUrl)}"` : '';
+          const initial = escapeHtml((b.name || '?').trim().charAt(0).toUpperCase() || '?');
+          const iconSrc = b.hasIcon ? botIconUrl(b) : '';
+          const iconImg =
+            iconSrc
+              ? `<img class="bot-tile-icon-img" alt="" data-bot-icon-for="${escapeHtml(b.id)}" src="${escapeHtml(iconSrc)}" loading="lazy" decoding="async" />`
+              : `<img class="bot-tile-icon-img hidden" alt="" data-bot-icon-for="${escapeHtml(b.id)}" />`;
+          const descRaw = (b.description || '').trim();
+          const descHtml = descRaw
+            ? `<span class="bot-tile-desc">${escapeHtml(descRaw)}</span>`
+            : '<span class="bot-tile-desc bot-tile-desc--empty">Chưa có mô tả</span>';
+          return `
+          <button type="button" class="bot-tile${tileMod}" role="listitem"${dis}${openAttr}
+            title="${b.chatUrl ? 'Mở trang bot trong tab mới (đăng nhập chat)' : 'Bot chưa chạy — không mở được'}">
+            <div class="bot-tile-row">
+              <span class="bot-tile-icon-shell" aria-hidden="true">
+                ${iconImg}
+                <span class="bot-tile-icon-fallback">${initial}</span>
+              </span>
+              <div class="bot-tile-text">
+                <span class="bot-tile-name">${escapeHtml(b.name)}</span>
+                ${descHtml}
+              </div>
+            </div>
+          </button>`;
+        })
+        .join('');
+      // Ẩn fallback khi ảnh load OK; nếu lỗi thì để fallback.
+      grid.querySelectorAll('img.bot-tile-icon-img[src]').forEach((img) => {
+        const shell = img.closest('.bot-tile-icon-shell');
+        const fb = shell && shell.querySelector('.bot-tile-icon-fallback');
+        if (!fb) return;
+        const hideFallback = () => fb.classList.add('hidden');
+        const showFallback = () => fb.classList.remove('hidden');
+        if (img.complete && img.naturalWidth > 0) {
+          hideFallback();
+          return;
+        }
+        img.addEventListener('load', hideFallback, { once: true });
+        img.addEventListener('error', showFallback, { once: true });
+      });
+    }
+
+    function renderBotTable(bots) {
+      const tbody = $('tbody');
+      $('list-loading').classList.add('hidden');
+      if (!bots.length) {
+        $('list-empty').classList.remove('hidden');
+        $('tbl').classList.add('hidden');
+        tbody.innerHTML = '';
+        return;
+      }
+      $('list-empty').classList.add('hidden');
+      $('tbl').classList.remove('hidden');
+      tbody.innerHTML = bots.map((b) => {
+        const stClass = 'status-' + (b.status || 'pending');
+        const stText = b.status + (b.statusMessage ? ' — ' + b.statusMessage : '');
+        const actions = [];
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-edit="${escapeHtml(b.id)}">Sửa</button>`);
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-env="${escapeHtml(b.id)}">.env</button>`);
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-logs="${escapeHtml(b.id)}">Log</button>`);
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-reload="${escapeHtml(b.id)}">Reload</button>`);
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-restart="${escapeHtml(b.id)}">Restart</button>`);
+        actions.push(`<button type="button" class="btn-danger btn-sm" data-del="${escapeHtml(b.id)}">Xóa</button>`);
+        const descLine = (b.description || '').trim()
+          ? `<br><small style="color:#666;display:block;margin-top:4px;max-width:420px">${escapeHtml((b.description || '').trim())}</small>`
+          : '';
+        return `<tr>
+          <td><strong>${escapeHtml(b.name)}</strong>${descLine}<br><small style="color:#888">${escapeHtml(b.id)} · port ${b.port ?? '—'}</small></td>
+          <td class="${stClass}">${escapeHtml(stText)}</td>
+          <td>${actions.join('')}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function loadBots() {
+      const r = await api('/bots');
+      if (r.status === 401) return;
+      const d = await r.json();
+      const bots = d.bots || [];
+      // Tránh re-render liên tục khi poll: chỉ render lại khi dữ liệu thay đổi.
+      const signature = JSON.stringify(
+        (bots || []).map((b) => ({
+          id: b.id,
+          name: b.name,
+          description: b.description,
+          status: b.status,
+          statusMessage: b.statusMessage,
+          port: b.port,
+          chatUrl: b.chatUrl,
+          hasIcon: b.hasIcon,
+          updatedAt: b.updatedAt,
+          createdBotAt: b.createdBotAt,
+        }))
+      );
+      if (signature === loadBots._lastSig) {
+        cachedBots = bots;
+        const onManage = !$('panel-manage').classList.contains('hidden');
+        if (onManage) $('list-loading').classList.add('hidden');
+        return;
+      }
+      loadBots._lastSig = signature;
+      cachedBots = bots;
+      const onManage = !$('panel-manage').classList.contains('hidden');
+      if (onManage) $('list-loading').classList.add('hidden');
+      renderBotGrid(bots);
+      renderBotTable(bots);
+    }
+
+    async function loadGitPublicKey() {
+      const pre = $('git-key-pre');
+      if (!pre) return;
+      pre.textContent = 'Đang tải…';
+      const r = await api('/system/git-public-key');
+      if (r.status === 401) return;
+      const d = await r.json().catch(() => ({}));
+      if (!d.success) {
+        pre.textContent = d.message || 'Lỗi';
+        return;
+      }
+      pre.textContent = d.publicKey || '(trống)';
+    }
+
+    $('btn-git-key-refresh').onclick = () => loadGitPublicKey();
+
+    let cachedPyBots = [];
+    function renderPyBotTable(bots) {
+      const tbody = $('py-tbody');
+      $('py-list-loading').classList.add('hidden');
+      if (!bots.length) {
+        $('py-list-empty').classList.remove('hidden');
+        $('py-tbl').classList.add('hidden');
+        if (tbody) tbody.innerHTML = '';
+        return;
+      }
+      $('py-list-empty').classList.add('hidden');
+      $('py-tbl').classList.remove('hidden');
+      tbody.innerHTML = bots.map((b) => {
+        const stClass = 'status-' + (b.status || 'pending');
+        const stText = (b.status || 'pending') + (b.statusMessage ? ' — ' + b.statusMessage : '');
+        const actions = [];
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-py-env="${escapeHtml(b.id)}">.env</button>`);
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-py-logs="${escapeHtml(b.id)}">Log</button>`);
+        actions.push(`<button type="button" class="btn-ghost btn-sm" data-py-reload="${escapeHtml(b.id)}">Reload</button>`);
+        actions.push(`<button type="button" class="btn-danger btn-sm" data-py-del="${escapeHtml(b.id)}">Xóa</button>`);
+        return `<tr>
+          <td><strong>${escapeHtml(b.name || '')}</strong><br><small style="color:#888">${escapeHtml(b.id)} · ${escapeHtml(b.gitUrl || '')}</small></td>
+          <td class="${stClass}">${escapeHtml(stText)}</td>
+          <td>${actions.join('')}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function loadPythonBots() {
+      $('py-list-loading').classList.remove('hidden');
+      const r = await api('/python-bots');
+      if (r.status === 401) return;
+      const d = await r.json().catch(() => ({}));
+      const bots = d.bots || [];
+      cachedPyBots = bots;
+      renderPyBotTable(bots);
+    }
+
+    async function reloadPythonBot(id) {
+      if (!confirm('Reload bot Python: pull code mới + pip install + restart. Tiếp tục?')) return;
+      const r = await api('/python-bots/' + encodeURIComponent(id) + '/reload', { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (!d.success) alert(d.message || 'Lỗi');
+      loadPythonBots();
+    }
+
+    async function deletePythonBot(id) {
+      if (!confirm('Xóa bot Python, dừng PM2 và xóa thư mục?')) return;
+      const r = await api('/python-bots/' + encodeURIComponent(id), { method: 'DELETE' });
+      const d = await r.json().catch(() => ({}));
+      if (!d.success) alert(d.message || 'Lỗi');
+      loadPythonBots();
+    }
+
+    async function openPyEnvWizard(pyId) {
+      envWizardBotId = 'py:' + pyId;
+      const b = cachedPyBots.find((x) => x.id === pyId);
+      $('modal-env-sub').textContent = b ? `${b.name} — py:${pyId}` : `py:${pyId}`;
+      $('env-wizard-wait').classList.remove('hidden');
+      $('env-wizard-no-example').classList.add('hidden');
+      $('env-wizard-form-wrap').classList.add('hidden');
+      $('env-wizard-msg').classList.add('hidden');
+      $('env-skip-restart').checked = true; // python: save-only; reload sẽ restart
+      $('modal-bot-env').classList.remove('hidden');
+      $('modal-bot-env').setAttribute('aria-hidden', 'false');
+      $('env-wizard-fields').innerHTML = '';
+
+      try {
+        const r = await api('/python-bots/' + encodeURIComponent(pyId) + '/env-wizard');
+        const d = await r.json().catch(() => ({}));
+        if (!d.success) throw new Error(d.message || 'Lỗi API env-wizard');
+        $('env-wizard-wait').classList.add('hidden');
+        if (!d.hasExample || !d.variables || !d.variables.length) {
+          $('env-wizard-no-example').textContent =
+            d.message || 'Không có .env.example hoặc không có biến — tạo .env thủ công nếu cần.';
+          $('env-wizard-no-example').classList.remove('hidden');
+          return;
+        }
+        $('modal-env-file-hint').textContent =
+          'Python bot: tạo file .env theo .env.example. Sau khi lưu, bấm Reload bot Python để restart.';
+        const box = $('env-wizard-fields');
+        box.innerHTML = d.variables
+          .map((v, i) => {
+            const id = 'env-inp-py-' + i;
+            const hint = v.hint ? `<div class="hint-line">${escapeHtml(v.hint)}</div>` : '';
+            const ph = v.exampleValue ? 'vd. ' + String(v.exampleValue).slice(0, 80) : '';
+            const type = v.sensitive ? 'password' : 'text';
+            const val = escapeHtml(String(v.currentValue ?? ''));
+            const need = v.needsUserInput ? ' needs-user' : '';
+            return (
+              `<div class="env-field${need}"><label class="key" for="${id}">${escapeHtml(v.key)}</label>` +
+              hint +
+              `<input id="${id}" type="${type}" autocomplete="off" data-env-key="${escapeHtml(v.key)}" value="${val}" placeholder="${escapeHtml(ph)}" /></div>`
+            );
+          })
+          .join('');
+        $('env-wizard-form-wrap').classList.remove('hidden');
+      } catch (e) {
+        $('env-wizard-wait').classList.add('hidden');
+        $('env-wizard-msg').textContent = e.message || 'Lỗi';
+        $('env-wizard-msg').className = 'err';
+        $('env-wizard-msg').classList.remove('hidden');
+      }
+    }
+
+    // Modal add python
+    function closeAddPythonModal() {
+      $('modal-add-python').classList.add('hidden');
+      $('modal-add-python').setAttribute('aria-hidden', 'true');
+    }
+    function openAddPythonModal() {
+      $('py-add-msg').classList.add('hidden');
+      $('py-add-name').value = '';
+      $('py-add-git').value = '';
+      $('py-add-branch').value = '';
+      $('py-add-entry').value = 'bot.py';
+      $('modal-add-python').classList.remove('hidden');
+      $('modal-add-python').setAttribute('aria-hidden', 'false');
+      $('py-add-name').focus();
+    }
+    $('btn-open-add-python').onclick = () => openAddPythonModal();
+    $('modal-add-python-close').onclick = () => closeAddPythonModal();
+    $('modal-add-python-cancel').onclick = () => closeAddPythonModal();
+    $('modal-add-python').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-add-python').addEventListener('click', () => closeAddPythonModal());
+
+    $('btn-py-create').onclick = async () => {
+      const msg = $('py-add-msg');
+      msg.classList.add('hidden');
+      const name = $('py-add-name').value.trim();
+      const gitUrl = $('py-add-git').value.trim();
+      const branch = $('py-add-branch').value.trim();
+      const entrypoint = $('py-add-entry').value.trim() || 'bot.py';
+      if (!gitUrl) {
+        msg.textContent = 'Nhập git URL.';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      const r = await api('/python-bots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, gitUrl, branch, entrypoint }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!d.success) {
+        msg.textContent = d.message || 'Lỗi';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      msg.textContent = 'Đã nhận. Đang clone → pip → pm2 (id: ' + d.id + ')';
+      msg.className = 'ok';
+      msg.classList.remove('hidden');
+      closeAddPythonModal();
+      loadPythonBots();
+    };
+
+    // Python logs modal reuse existing logs modal UI (pm2)
+    async function openPyLogsModal(id) {
+      logsBotId = 'py:' + id;
+      $('modal-logs-sub').textContent = 'Python bot — ' + id;
+      logsCache = null;
+      $('log-fetch-err').classList.add('hidden');
+      setLogViewTab('both', false);
+      $('modal-bot-logs').classList.remove('hidden');
+      $('modal-bot-logs').setAttribute('aria-hidden', 'false');
+      await fetchPyBotLogs(id);
+    }
+
+    async function fetchPyBotLogs(id) {
+      $('log-pre').textContent = 'Đang tải…';
+      const lines = ($('log-lines-select') && $('log-lines-select').value) || '200';
+      const tab = document.querySelector('#modal-bot-logs .log-tab.active');
+      const view = (tab && tab.getAttribute('data-log-view')) || 'both';
+      const r = await api('/python-bots/' + encodeURIComponent(id) + '/logs?lines=' + encodeURIComponent(lines) + '&which=' + encodeURIComponent(view));
+      const d = await r.json().catch(() => ({}));
+      if (!d.success) {
+        $('log-pre').textContent = '';
+        $('log-fetch-err').textContent = d.message || 'Lỗi';
+        $('log-fetch-err').classList.remove('hidden');
+        return;
+      }
+      logsCache = d;
+      renderLogPanel();
+    }
+
+    // bind actions in python table
+    $('py-tbody').onclick = (ev) => {
+      const t = ev.target;
+      if (!(t instanceof HTMLElement)) return;
+      const envId = t.getAttribute('data-py-env');
+      if (envId) return void openPyEnvWizard(envId);
+      const lg = t.getAttribute('data-py-logs');
+      if (lg) return void openPyLogsModal(lg);
+      const rld = t.getAttribute('data-py-reload');
+      if (rld) return void reloadPythonBot(rld);
+      const delId = t.getAttribute('data-py-del');
+      if (delId) return void deletePythonBot(delId);
+    };
+
+    async function reloadBot(id) {
+      if (!confirm('Reload: pull code mới (nếu clone Git) + npm + restart. Tiếp tục?')) return;
+      const r = await api('/bots/' + id + '/reload', { method: 'POST' });
+      const d = await r.json();
+      if (!d.success) alert(d.message || 'Lỗi');
+      else alert(d.message || 'Xong');
+      loadBots();
+    }
+
+    async function restartBot(id) {
+      if (!confirm('Restart bot này?')) return;
+      const r = await api('/bots/' + id + '/restart', { method: 'POST' });
+      const d = await r.json();
+      if (!d.success) alert(d.message || 'Lỗi');
+      loadBots();
+    }
+
+    async function deleteBot(id) {
+      if (!confirm('Xóa bot, dừng PM2 và xóa thư mục?')) return;
+      const r = await api('/bots/' + id, { method: 'DELETE' });
+      const d = await r.json();
+      if (!d.success) alert(d.message || 'Lỗi');
+      loadBots();
+    }
+
+    $('btn-create').onclick = async () => {
+      const msg = $('create-msg');
+      msg.className = '';
+      msg.classList.add('hidden');
+      const name = $('add-modal-bot-name').value.trim();
+      const fi = $('add-modal-zip').files[0];
+      const ic = $('add-modal-icon-zip').files[0];
+      if (!fi) {
+        msg.textContent = 'Chọn file zip.';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      if (!ic) {
+        msg.textContent = 'Chọn icon bot (PNG, JPEG, WebP, GIF hoặc SVG).';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      const fd = new FormData();
+      fd.append('name', name || 'Bot');
+      fd.append('description', $('add-modal-desc-zip').value.trim());
+      fd.append('allowedRoleNames', JSON.stringify(checkboxValues($('add-modal-roles-zip'))));
+      fd.append('archive', fi);
+      fd.append('icon', ic);
+      const token = localStorage.getItem(LS);
+      const headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const r = await fetch('/platform/api/bots', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers,
+        body: fd,
+      });
+      if (r.status === 401) {
+        sessionExpired();
+        return;
+      }
+      const d = await r.json();
+      if (!d.success) {
+        msg.textContent = d.message || 'Lỗi upload';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      msg.textContent = 'Đã nhận: ' + (d.message || '') + ' (id: ' + d.id + ')';
+      msg.className = 'ok';
+      msg.classList.remove('hidden');
+      $('add-modal-zip').value = '';
+      $('add-modal-icon-zip').value = '';
+      $('add-modal-desc-zip').value = '';
+      const newBotId = d.id;
+      loadBots();
+      closeAddModal();
+      if (newBotId) openEnvWizard(newBotId);
+    };
+
+    $('btn-clone').onclick = async () => {
+      const msg = $('clone-msg');
+      msg.className = '';
+      msg.classList.add('hidden');
+      const name =
+        ($('add-modal-git-name').value || $('add-modal-bot-name').value || '').trim() || 'Bot';
+      const gitUrl = $('add-modal-git-url').value.trim();
+      const branch = $('add-modal-git-branch').value.trim();
+      const ic = $('add-modal-icon-git').files[0];
+      if (!gitUrl) {
+        msg.textContent = 'Nhập URL GitHub.';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      if (!ic) {
+        msg.textContent = 'Chọn icon bot (PNG, JPEG, WebP, GIF hoặc SVG).';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      const fd = new FormData();
+      fd.append('name', name);
+      fd.append('description', $('add-modal-desc-git').value.trim());
+      fd.append('allowedRoleNames', JSON.stringify(checkboxValues($('add-modal-roles-git'))));
+      fd.append('gitUrl', gitUrl);
+      fd.append('branch', branch);
+      fd.append('icon', ic);
+      const token = localStorage.getItem(LS);
+      const headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const r = await fetch('/platform/api/bots/clone', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers,
+        body: fd,
+      });
+      if (r.status === 401) {
+        sessionExpired();
+        return;
+      }
+      const d = await r.json();
+      if (!d.success) {
+        msg.textContent = d.message || 'Lỗi clone';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      msg.textContent = (d.message || '') + ' (id: ' + d.id + ')';
+      msg.className = 'ok';
+      msg.classList.remove('hidden');
+      $('add-modal-icon-git').value = '';
+      $('add-modal-desc-git').value = '';
+      const newBotId = d.id;
+      loadBots();
+      closeAddModal();
+      if (newBotId) openEnvWizard(newBotId);
+    };
+
+    $('btn-save-edit').onclick = async () => {
+      const id = $('edit-bot-id').value;
+      const name = $('edit-bot-name').value.trim();
+      const description = $('edit-bot-desc').value.trim();
+      const allowedRoleNames = checkboxValues($('edit-bot-roles'));
+      const msg = $('edit-msg');
+      msg.classList.add('hidden');
+      if (!name) {
+        msg.textContent = 'Nhập tên bot.';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      const prevBot = cachedBots.find((x) => x.id === id);
+      const iconFile = $('edit-bot-icon').files[0];
+      if (prevBot && !prevBot.hasIcon && !iconFile) {
+        msg.textContent = 'Bot chưa có icon — hãy chọn file icon.';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      const r = await api('/bots/' + encodeURIComponent(id), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description, allowedRoleNames }),
+      });
+      const d = await r.json();
+      if (!d.success) {
+        msg.textContent = d.message || 'Lỗi';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      if (iconFile) {
+        const ifd = new FormData();
+        ifd.append('icon', iconFile);
+        const token = localStorage.getItem(LS);
+        const headers = {};
+        if (token) headers['Authorization'] = 'Bearer ' + token;
+        const ir = await fetch('/platform/api/bots/' + encodeURIComponent(id) + '/icon', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers,
+          body: ifd,
+        });
+        if (ir.status === 401) {
+          sessionExpired();
+          return;
+        }
+        const idata = await ir.json();
+        if (!idata.success) {
+          msg.textContent = idata.message || 'Lưu icon lỗi';
+          msg.className = 'err';
+          msg.classList.remove('hidden');
+          return;
+        }
+      }
+      closeEditModal();
+      loadBots();
+    };
+
+    window.addEventListener('storage', (e) => {
+      if (e.key !== 'ai_chat_user' || e.storageArea !== localStorage) return;
+      if (e.newValue != null) return;
+      logoutAdminBecauseChatRevoked();
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        snapshotLocalChatFlag();
+        return;
+      }
+      const nowChat = Boolean(localStorage.getItem('ai_chat_user'));
+      if (lastLocalChatPresent && !nowChat) {
+        logoutAdminBecauseChatRevoked();
+        return;
+      }
+      snapshotLocalChatFlag();
+      const token = localStorage.getItem(LS);
+      const headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      fetch('/platform/api/auth/session', { credentials: 'same-origin', headers }).then((res) => {
+        if (res.status === 401) sessionExpired();
+      });
+    });
+
+    (async function init() {
+      updateTopbarUser();
+      snapshotLocalChatFlag();
+      await fetchPlatformMeta();
+      updateAdminMenuVisibility();
+      renderRoleCheckboxes();
+      const savedNav = localStorage.getItem(NAV_STORAGE);
+      let navOk = 'dashboard';
+      if (savedNav === 'manage') navOk = 'manage';
+      else if (savedNav === 'python') navOk = 'python';
+      else if (savedNav === 'system') navOk = 'system';
+      else if (savedNav === 'logs') navOk = 'logs';
+      if (!canSeeAdminIconMenu() && navOk !== 'dashboard') {
+        navOk = 'dashboard';
+        localStorage.setItem(NAV_STORAGE, 'dashboard');
+      }
+      if (navOk === 'manage' && managePasswordRequired && !isManageTabUnlocked()) {
+        navOk = 'dashboard';
+        localStorage.setItem(NAV_STORAGE, 'dashboard');
+      }
+      if (navOk === 'python' && pythonPasswordRequired && !isPythonTabUnlocked()) {
+        navOk = 'dashboard';
+        localStorage.setItem(NAV_STORAGE, 'dashboard');
+      }
+      setActivePanel(navOk);
+      if ($('panel-manage').classList.contains('hidden')) {
+        $('list-loading').classList.add('hidden');
+      } else {
+        $('list-loading').classList.remove('hidden');
+      }
+      loadBots();
+      startPoll();
+    })();
+  </script>
+</body>
+</html>

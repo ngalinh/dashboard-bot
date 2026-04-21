@@ -1,0 +1,25 @@
+{
+  "name": "basso-bot-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Control plane: đăng nhập, dashboard, upload zip bot, proxy /b/{id}",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "gen:nginx": "node scripts/generate-nginx-site.cjs --out data/generated/nginx-site.conf",
+    "gen:nginx:http-only": "node scripts/generate-nginx-site.cjs --http-only --out data/generated/nginx-site.conf"
+  },
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "http-proxy-middleware": "^3.0.5",
+    "multer": "^2.1.1",
+    "mysql2": "^3.15.3"
+  }
+}

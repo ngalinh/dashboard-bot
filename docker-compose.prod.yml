@@ -1,0 +1,80 @@
+# Production / staging: MySQL + Platform (registry MySQL).
+# Chạy từ thư mục platform/:
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# Trước khi deploy: đặt MYSQL_ROOT_PASSWORD (và PUBLIC_ORIGIN HTTPS) trong platform/.env
+# MySQL chỉ lắng nghe trong mạng Docker; từ host dùng: docker compose -f docker-compose.prod.yml exec mysql mysql -uroot -p
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-devroot}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-basso_platform}
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'mysqladmin ping -h localhost -uroot -p"$$MYSQL_ROOT_PASSWORD" || exit 1',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 25s
+    # Chỉ bật khi cần truy cập MySQL từ máy host (localhost an toàn hơn 0.0.0.0):
+    # ports:
+    #   - "127.0.0.1:3306:3306"
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - ./data/redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  platform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "${PLATFORM_PUBLISH_PORT:-3980}:3980"
+    env_file:
+      - path: .env
+        required: false
+    # Basso, PLATFORM_SESSION_SECRET, mật khẩu mạnh: platform/.env — đặt MYSQL_ROOT_PASSWORD, PUBLIC_ORIGIN (HTTPS)
+    environment:
+      NODE_ENV: production
+      PLATFORM_COOKIE_SECURE: ${PLATFORM_COOKIE_SECURE:-0}
+      PORT: "3980"
+      PLATFORM_ADMIN_USER: ${PLATFORM_ADMIN_USER:-admin}
+      PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-admin-dev-docker}
+      PLATFORM_MANAGE_TAB_PASSWORD: ${PLATFORM_MANAGE_TAB_PASSWORD:-manage-tab-password}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:3980}
+      BOT_PORT_START: ${BOT_PORT_START:-4100}
+      BOT_NODE_OPTIONS: ${BOT_NODE_OPTIONS:---max-old-space-size=384}
+      BOT_PM2_MAX_MEMORY: ${BOT_PM2_MAX_MEMORY:-450M}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_USER: root
+      MYSQL_PASSWORD: ${MYSQL_ROOT_PASSWORD:-devroot}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-basso_platform}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+    volumes:
+      - ./data:/app/data
+      # Tuỳ chọn — tab «Logs hệ thống»: Docker CLI trong image + socket (xem .env.example)
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped

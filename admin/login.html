@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#00354E" />
+  <title>Platform — Đăng nhập quản trị</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/icons/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon-180.png" />
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/apple-touch-icon-152.png" />
+  <link rel="apple-touch-icon" sizes="120x120" href="/icons/apple-touch-icon-120.png" />
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .left {
+      width: 46%;
+      background: #062538;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 60px 56px;
+    }
+
+    .logo {
+      margin-bottom: 48px;
+    }
+
+    .logo img {
+      height: 44px;
+      width: auto;
+    }
+
+    .logo-fallback {
+      display: none;
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: 0.04em;
+    }
+
+    .form-input-wrap {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .form-input {
+      width: 67%;
+      padding: 10px 16px;
+      border: 1.5px solid #ddd;
+      border-radius: 6px;
+      font-size: 15px;
+      color: #333;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input::placeholder { color: #aaa; }
+
+    .form-input:focus {
+      border-color: #f5a623;
+      box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.15);
+    }
+
+    .toggle-pw {
+      position: absolute;
+      right: calc(33% + 14px);
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #aaa;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px;
+    }
+
+    .toggle-pw:hover { color: #555; }
+
+    .btn-login {
+      width: 67%;
+      padding: 11px;
+      background: #f5a623;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+    }
+
+    .btn-login:hover { background: #e09510; }
+    .btn-login:disabled { background: #c8a060; cursor: not-allowed; }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(255, 255, 255, 0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-login.loading .spinner { display: block; }
+    .btn-login.loading .btn-text { display: none; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      display: none;
+      background: rgba(220, 53, 69, 0.18);
+      border: 1px solid rgba(220, 53, 69, 0.5);
+      color: #ffb3b3;
+      border-radius: 6px;
+      padding: 10px 14px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.4;
+      width: 67%;
+    }
+
+    .error-msg.show { display: block; }
+
+    .hint {
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 20px;
+      line-height: 1.45;
+      width: 67%;
+      max-width: 100%;
+    }
+
+    .hint code {
+      font-size: 0.75em;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .right {
+      flex: 1;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+    }
+
+    .right-title {
+      font-size: 30px;
+      font-weight: 700;
+      color: #1a4a5c;
+      margin-bottom: 10px;
+    }
+
+    .right-subtitle {
+      font-size: 15px;
+      color: #999;
+      margin-bottom: 48px;
+    }
+
+    .illustration {
+      width: 100%;
+      max-width: 420px;
+    }
+
+    @media (max-width: 768px) {
+      .left {
+        width: 100%;
+        padding: 40px 28px;
+        align-items: center;
+        text-align: center;
+      }
+      .right { display: none; }
+      .logo { display: flex; justify-content: center; }
+      .form-input { width: 100%; }
+      .toggle-pw { right: 14px; }
+      .btn-login { width: 100%; }
+      .error-msg { width: 100%; }
+      .hint { width: 100%; text-align: left; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="left">
+  <div class="logo">
+    <img src="/images/logo.png" alt="Basso" onerror="this.style.display='none';this.nextElementSibling.style.display='block'" />
+  </div>
+
+  <div class="error-msg" id="login-not-configured"></div>
+  <div class="error-msg" id="login-err"></div>
+
+  <form id="login-form">
+    <label for="u" id="label-u" class="sr-only">Tài khoản</label>
+    <div class="form-input-wrap">
+      <input type="text" class="form-input" id="u" autocomplete="username" required />
+    </div>
+
+    <div class="form-input-wrap">
+      <input
+        type="password"
+        class="form-input"
+        id="p"
+        autocomplete="current-password"
+        required
+        style="padding-right: 44px;"
+      />
+      <button type="button" class="toggle-pw" onclick="togglePassword()" title="Hiện/ẩn mật khẩu" aria-label="Hiện/ẩn mật khẩu">
+        <span id="eyeIcon">&#x1F441;</span>
+      </button>
+    </div>
+
+    <button type="submit" class="btn-login" id="btn-login">
+      <div class="spinner"></div>
+      <span class="btn-text">Đăng nhập</span>
+    </button>
+  </form>
+
+  <p class="hint" id="login-hint">Đang tải cấu hình đăng nhập…</p>
+</div>
+
+<div class="right">
+  <div class="right-title">AI Chat Platform</div>
+  <div class="right-subtitle">Đăng nhập để chat và quản lý AI Chat</div>
+
+  <svg class="illustration" viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="250" cy="290" rx="200" ry="40" fill="#e8f4f8" opacity="0.6"/>
+    <rect x="80" y="60" width="260" height="180" rx="10" fill="#1a2e3b"/>
+    <rect x="90" y="70" width="240" height="155" rx="6" fill="#0f1f2a"/>
+    <rect x="185" y="240" width="50" height="20" rx="3" fill="#2a4a5c"/>
+    <rect x="160" y="258" width="100" height="8" rx="4" fill="#2a4a5c"/>
+    <rect x="110" y="150" width="18" height="60" rx="3" fill="#f5a623" opacity="0.9"/>
+    <rect x="135" y="120" width="18" height="90" rx="3" fill="#f5a623" opacity="0.9"/>
+    <rect x="160" y="135" width="18" height="75" rx="3" fill="#f5a623" opacity="0.7"/>
+    <rect x="185" y="100" width="18" height="110" rx="3" fill="#4ab8c1" opacity="0.9"/>
+    <rect x="210" y="130" width="18" height="80" rx="3" fill="#4ab8c1" opacity="0.7"/>
+    <rect x="235" y="110" width="18" height="100" rx="3" fill="#f5a623" opacity="0.8"/>
+    <rect x="260" y="140" width="18" height="70" rx="3" fill="#4ab8c1" opacity="0.8"/>
+    <polyline points="119,148 144,118 169,133 194,98 219,128 244,108 269,138" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="115" cy="100" r="22" fill="none" stroke="#f5a623" stroke-width="10" stroke-dasharray="80 60"/>
+    <circle cx="115" cy="100" r="22" fill="none" stroke="#4ab8c1" stroke-width="10" stroke-dasharray="40 100" stroke-dashoffset="-80"/>
+    <rect x="320" y="80" width="110" height="75" rx="8" fill="#fff" stroke="#e0e0e0" stroke-width="1"/>
+    <rect x="332" y="110" width="10" height="30" rx="2" fill="#f5a623"/>
+    <rect x="348" y="100" width="10" height="40" rx="2" fill="#f5a623"/>
+    <rect x="364" y="115" width="10" height="25" rx="2" fill="#4ab8c1"/>
+    <rect x="380" y="95" width="10" height="45" rx="2" fill="#f5a623"/>
+    <rect x="396" y="108" width="10" height="32" rx="2" fill="#4ab8c1"/>
+    <text x="334" y="100" font-size="9" fill="#888">Doanh thu</text>
+    <rect x="330" y="170" width="90" height="60" rx="8" fill="#1a2e3b"/>
+    <circle cx="360" cy="198" r="16" fill="none" stroke="#f5a623" stroke-width="6" stroke-dasharray="55 45"/>
+    <circle cx="360" cy="198" r="16" fill="none" stroke="#4ab8c1" stroke-width="6" stroke-dasharray="25 75" stroke-dashoffset="-55"/>
+    <text x="382" y="194" font-size="8" fill="#fff">48%</text>
+    <text x="382" y="205" font-size="7" fill="#aaa">Hoàn thành</text>
+    <circle cx="148" cy="252" r="14" fill="#f5c5a0"/>
+    <rect x="134" y="266" width="28" height="40" rx="6" fill="#f5a623"/>
+    <line x1="162" y1="278" x2="180" y2="260" stroke="#f5c5a0" stroke-width="5" stroke-linecap="round"/>
+    <line x1="134" y1="285" x2="116" y2="300" stroke="#f5c5a0" stroke-width="5" stroke-linecap="round"/>
+    <line x1="140" y1="306" x2="135" y2="326" stroke="#2a3a4a" stroke-width="5" stroke-linecap="round"/>
+    <line x1="156" y1="306" x2="161" y2="326" stroke="#2a3a4a" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="230" cy="248" r="15" fill="#d4a574"/>
+    <rect x="215" y="263" width="30" height="42" rx="6" fill="#2a3a5c"/>
+    <line x1="215" y1="278" x2="196" y2="270" stroke="#d4a574" stroke-width="5" stroke-linecap="round"/>
+    <line x1="245" y1="278" x2="264" y2="270" stroke="#d4a574" stroke-width="5" stroke-linecap="round"/>
+    <line x1="222" y1="305" x2="217" y2="328" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round"/>
+    <line x1="238" y1="305" x2="243" y2="328" stroke="#1a1a2e" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="330" cy="268" r="13" fill="#f5c5a0"/>
+    <rect x="317" y="281" width="26" height="30" rx="5" fill="#4ab8c1"/>
+    <line x1="317" y1="292" x2="300" y2="290" stroke="#f5c5a0" stroke-width="5" stroke-linecap="round"/>
+    <rect x="310" y="308" width="36" height="10" rx="5" fill="#888"/>
+    <line x1="323" y1="311" x2="316" y2="328" stroke="#2a3a4a" stroke-width="5" stroke-linecap="round"/>
+    <line x1="333" y1="311" x2="340" y2="328" stroke="#2a3a4a" stroke-width="5" stroke-linecap="round"/>
+    <line x1="80" y1="328" x2="430" y2="328" stroke="#ddd" stroke-width="1.5"/>
+  </svg>
+</div>
+
+<script>
+  const LS = 'platform_token';
+
+  function togglePassword() {
+    const input = document.getElementById('p');
+    const icon = document.getElementById('eyeIcon');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      icon.textContent = '👁';
+    }
+  }
+
+  function safeNext() {
+    const q = new URLSearchParams(location.search).get('next') || '/admin/dashboard.html';
+    if (typeof q !== 'string' || !q.startsWith('/admin/')) return '/admin/dashboard.html';
+    return q;
+  }
+
+  async function checkMeta() {
+    const r = await fetch('/platform/api/meta');
+    const d = await r.json();
+    const hint = document.getElementById('login-hint');
+    const labelU = document.getElementById('label-u');
+    const inputU = document.getElementById('u');
+    const notCfg = document.getElementById('login-not-configured');
+    if (!d.authConfigured) {
+      notCfg.textContent =
+        'Chưa cấu hình: đặt BASSO_URL + BASSO_API_KEY (partner), hoặc PLATFORM_ADMIN_PASSWORD trong .env platform.';
+      notCfg.classList.add('show');
+    } else {
+      notCfg.classList.remove('show');
+      notCfg.textContent = '';
+    }
+    if (d.authMode === 'basso') {
+      labelU.textContent = 'Email';
+      inputU.placeholder = 'Nhập email đăng nhập';
+      inputU.value = '';
+      hint.textContent ='';
+    } else {
+      labelU.textContent = 'Tài khoản';
+      inputU.placeholder = 'Nhập tài khoản';
+      hint.textContent ='';
+    }
+  }
+
+  async function tryExistingSession() {
+    const tok = localStorage.getItem(LS);
+    const headers = {};
+    if (tok) headers['Authorization'] = 'Bearer ' + tok;
+    const r = await fetch('/platform/api/auth/sync-cookie', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: Object.keys(headers).length ? headers : {},
+    });
+    if (r.status === 200) {
+      location.replace(safeNext());
+      return;
+    }
+    if (tok) localStorage.removeItem(LS);
+  }
+
+  document.getElementById('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('login-err');
+    const btn = document.getElementById('btn-login');
+    errEl.classList.remove('show');
+    errEl.textContent = '';
+    const username = document.getElementById('u').value.trim();
+    const password = document.getElementById('p').value;
+    btn.disabled = true;
+    btn.classList.add('loading');
+    try {
+      const res = await fetch('/platform/api/auth/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const d = await res.json();
+      if (!d.success) {
+        errEl.textContent = d.message || 'Lỗi đăng nhập';
+        errEl.classList.add('show');
+        return;
+      }
+      localStorage.setItem(LS, d.token);
+      if (d.chatUser && typeof d.chatUser === 'object') {
+        localStorage.setItem('ai_chat_user', JSON.stringify(d.chatUser));
+      }
+      location.replace(safeNext());
+    } catch {
+      errEl.textContent = 'Lỗi kết nối';
+      errEl.classList.add('show');
+    } finally {
+      btn.disabled = false;
+      btn.classList.remove('loading');
+    }
+  });
+
+  (function init() {
+    checkMeta();
+    tryExistingSession();
+  })();
+</script>
+</body>
+</html>
