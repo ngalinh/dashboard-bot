@@ -898,7 +898,23 @@
       letter-spacing: 0.04em;
       padding: 3px 8px 3px 7px;
       border-radius: 20px;
+      z-index: 2;
     }
+    /* Khi pill là button (admin có quyền toggle) */
+    button.bot-card__pill {
+      cursor: pointer;
+      font-family: inherit;
+      transition: filter 0.15s, transform 0.15s;
+    }
+    button.bot-card__pill:hover { filter: brightness(0.95); transform: translateY(-1px); }
+    button.bot-card__pill:disabled { cursor: wait; opacity: 0.6; }
+    button.bot-card__pill .bot-card__pill-spinner {
+      width: 10px; height: 10px; border-radius: 50%;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      animation: pillSpin 0.7s linear infinite;
+    }
+    @keyframes pillSpin { to { transform: rotate(360deg); } }
     .bot-card__pill--on {
       background: rgba(16,185,129,0.12);
       color: #047857;
@@ -2328,10 +2344,59 @@
     $('modal-bot-env').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
     $('modal-bot-env').addEventListener('click', () => closeEnvModal());
 
+    /**
+     * Bật/tắt bot từ pill trên card. Chỉ admin mới gọi đến đây (FE đã hide button cho non-admin),
+     * BE cũng có requirePlatformManageAccess. Khi tắt → confirm trước; bật → toggle ngay.
+     */
+    async function handleToggleOnline(pillEl, id, currentOnline) {
+      const wantOnline = !currentOnline;
+      const bot = cachedBots.find((x) => x.id === id);
+      const botName = (bot && bot.name) || id;
+      if (!wantOnline) {
+        const ok = window.confirm(`Tắt bot «${botName}»?\n\nProcess sẽ dừng (pm2 stop), users không chat được tới khi bạn bật lại.`);
+        if (!ok) return;
+      }
+      // Optimistic UI: lock pill + spinner
+      const wasHTML = pillEl.innerHTML;
+      pillEl.disabled = true;
+      pillEl.innerHTML = '<span class="bot-card__pill-spinner"></span>' + (wantOnline ? 'BẬT…' : 'TẮT…');
+      try {
+        const r = await api('/bots/' + encodeURIComponent(id) + '/online-toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ online: wantOnline }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.success) {
+          window.alert('Không đổi được trạng thái: ' + (d.message || ('HTTP ' + r.status)));
+          pillEl.disabled = false;
+          pillEl.innerHTML = wasHTML;
+          return;
+        }
+        // Force re-render bằng cách bust signature cache + reload
+        loadBots._lastSig = null;
+        await loadBots();
+      } catch (e) {
+        window.alert('Lỗi mạng: ' + (e && e.message ? e.message : String(e)));
+        pillEl.disabled = false;
+        pillEl.innerHTML = wasHTML;
+      }
+    }
+
     function bindBotActions(container) {
       container.onclick = (ev) => {
         const t = ev.target;
         if (!(t instanceof HTMLElement)) return;
+        // Toggle ONLINE/OFFLINE pill — chặn bubble lên card (tránh mở chat khi admin click pill)
+        const toggleHost = t.closest && t.closest('[data-toggle-online]');
+        if (toggleHost) {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const id = toggleHost.getAttribute('data-toggle-online');
+          const currentOnline = toggleHost.getAttribute('data-online-current') === '1';
+          handleToggleOnline(toggleHost, id, currentOnline);
+          return;
+        }
         const openHost = t.closest && t.closest('[data-open-bot]');
         const openBot = openHost && openHost.getAttribute('data-open-bot');
         if (openBot) {
@@ -2407,6 +2472,7 @@
       const grid = $('bot-grid');
       const empty = $('grid-empty');
       const loading = $('grid-loading');
+      const isAdmin = canSeeAdminIconMenu();
       loading.classList.add('hidden');
       if (!bots.length) {
         empty.classList.remove('hidden');
@@ -2424,6 +2490,16 @@
           const online = Boolean(b.online);
           const pillClass = online ? 'bot-card__pill--on' : 'bot-card__pill--off';
           const pillText = online ? 'ONLINE' : 'OFFLINE';
+          // Admin: pill là button toggle. Non-admin: pill tĩnh.
+          const pillHtml = isAdmin
+            ? `<button type="button" class="bot-card__pill ${pillClass}" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
+                 <span class="bot-card__pill-dot"></span>
+                 ${pillText}
+               </button>`
+            : `<span class="bot-card__pill ${pillClass}">
+                 <span class="bot-card__pill-dot"></span>
+                 ${pillText}
+               </span>`;
           const chatable = Boolean(b.chatUrl);
           const dis = !chatable ? ' disabled' : '';
           const openAttr = chatable ? ` data-open-bot="${escapeHtml(b.chatUrl)}"` : '';
@@ -2455,10 +2531,7 @@
             style="--bot-primary:${deptColor}"
             title="${titleAttr}">
             <div class="bot-card__banner" style="background:${bannerBg}">
-              <span class="bot-card__pill ${pillClass}">
-                <span class="bot-card__pill-dot"></span>
-                ${pillText}
-              </span>
+              ${pillHtml}
               ${deptBadge}
               <div class="bot-card__header-row">
                 <span class="bot-card__avatar" aria-hidden="true" data-avatar-shell style="${iconSrc ? '' : 'background:' + deptColor}">
@@ -2540,6 +2613,7 @@
           status: b.status,
           statusMessage: b.statusMessage,
           online: b.online,
+          enabled: b.enabled,
           port: b.port,
           chatUrl: b.chatUrl,
           hasIcon: b.hasIcon,
