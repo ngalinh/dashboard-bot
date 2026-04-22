@@ -18,10 +18,13 @@
       });
     }
   </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
       background: #fff;
       color: #333;
       min-height: 100vh;
@@ -779,6 +782,286 @@
         min-width: 0;
       }
     }
+
+    /* ==========================================================================
+       BOLD DASHBOARD — trang chủ (panel-dashboard) — layout mới cho user
+       ========================================================================== */
+    body.dashboard-active {
+      background:
+        radial-gradient(ellipse 60% 50% at 0% 0%, rgba(0, 169, 157, 0.14) 0%, transparent 70%),
+        linear-gradient(135deg, #D2DFEC 0%, #DEE7F0 22%, #EAF0F5 48%, #F3F6FA 72%, #FAFCFD 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+    body.dashboard-active .wrap { padding-top: 0; padding-bottom: 60px; }
+
+    /* Hero */
+    .bold-hero {
+      padding: 8px 0 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .bold-hero__badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #0F2A3F;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      align-self: flex-start;
+    }
+    .bold-hero__dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #10B981;
+      box-shadow: 0 0 0 0 rgba(16,185,129,0.5);
+      animation: boldPulse 2s infinite;
+    }
+    @keyframes boldPulse {
+      0%   { box-shadow: 0 0 0 0 rgba(16,185,129,0.6); }
+      70%  { box-shadow: 0 0 0 6px rgba(16,185,129,0); }
+      100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); }
+    }
+    .bold-hero__title {
+      margin: 0;
+      font-size: 32px;
+      font-weight: 800;
+      color: #0F2A3F;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    .bold-hero__title-dot { color: #00A99D; }
+    .bold-hero__subtitle {
+      margin: 0;
+      font-size: 14px;
+      color: #475569;
+      max-width: 560px;
+    }
+
+    /* Grid */
+    .bold-grid-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    @media (min-width: 641px) and (max-width: 900px) {
+      .bold-grid-cards { grid-template-columns: repeat(2, 1fr) !important; }
+    }
+    @media (min-width: 1100px) {
+      .bold-grid-cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        max-width: 1200px;
+        margin: 0 auto;
+        gap: 18px;
+      }
+    }
+
+    /* Bot card */
+    .bot-card {
+      position: relative;
+      background: #FFFFFF;
+      border: 1px solid rgba(226,232,240,0.8);
+      border-radius: 20px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      color: inherit;
+      text-decoration: none;
+      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease, border-color 0.2s;
+      box-shadow: 0 6px 16px -4px rgba(15,42,63,0.10), 0 2px 4px -1px rgba(15,42,63,0.05);
+      cursor: pointer;
+      font: inherit;
+      text-align: left;
+    }
+    .bot-card:hover:not(:disabled) {
+      transform: translateY(-4px);
+      box-shadow: 0 24px 48px -12px rgba(15,42,63,0.22), 0 4px 12px -4px rgba(15,42,63,0.08);
+    }
+    .bot-card:disabled { cursor: not-allowed; opacity: 0.6; }
+    .bot-card__banner {
+      padding: 32px 18px 14px;
+      position: relative;
+    }
+    .bot-card__pill {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 3px 8px 3px 7px;
+      border-radius: 20px;
+    }
+    .bot-card__pill--on {
+      background: rgba(16,185,129,0.12);
+      color: #047857;
+      border: 1px solid rgba(16,185,129,0.3);
+    }
+    .bot-card__pill--off {
+      background: rgba(148,163,184,0.18);
+      color: #64748B;
+      border: 1px solid rgba(148,163,184,0.35);
+    }
+    .bot-card__pill-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #94A3B8;
+      box-shadow: inset 0 0 0 1.5px rgba(255,255,255,0.6);
+    }
+    .bot-card__pill--on .bot-card__pill-dot {
+      background: #10B981;
+      box-shadow: none;
+      position: relative;
+    }
+    .bot-card__pill--on .bot-card__pill-dot::before {
+      content: ''; position: absolute; inset: 0; border-radius: 50%;
+      background: #10B981;
+      animation: boldPulseDot 1.6s ease-out infinite;
+    }
+    @keyframes boldPulseDot {
+      0% { transform: scale(1); opacity: 0.7; }
+      70% { transform: scale(2.2); opacity: 0; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .bot-card__dept {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      padding: 4px 10px;
+      border-radius: 20px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      max-width: 55%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bot-card__header-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .bot-card__avatar {
+      width: 64px; height: 64px;
+      border-radius: 14px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.55);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .bot-card:hover .bot-card__avatar {
+      transform: scale(1.08) rotate(-3deg);
+    }
+    .bot-card__avatar img {
+      width: 100%; height: 100%; object-fit: contain; display: block;
+    }
+    .bot-card__avatar-fallback {
+      font-family: 'Inter', sans-serif;
+      font-weight: 800;
+      font-size: 26px;
+      color: #fff;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .bot-card__name-wrap { flex: 1; min-width: 0; }
+    .bot-card__name {
+      font-size: 18px;
+      font-weight: 800;
+      color: #0F2A3F;
+      letter-spacing: -0.02em;
+      line-height: 1.1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .bot-card__handle {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Card body */
+    .bot-card__body {
+      padding: 14px 18px 16px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    .bot-card__role {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F2A3F;
+      margin-bottom: 10px;
+      word-break: break-word;
+    }
+    .bot-card__tasks {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+    .bot-card__tasks li {
+      font-size: 12px;
+      color: #64748B;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.4;
+    }
+    .bot-card__tasks li::before {
+      content: '';
+      width: 4px; height: 4px; border-radius: 2px;
+      flex-shrink: 0;
+    }
+    .bot-card__empty-role {
+      font-size: 12px;
+      color: #94A3B8;
+      font-style: italic;
+    }
+    .bot-card__chat {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: #94A3B8;
+      transition: color 0.2s;
+    }
+    .bot-card:hover .bot-card__chat { color: var(--bot-primary, #0F2A3F); }
+    .bot-card__chat-arrow {
+      display: inline-block;
+      margin-left: 4px;
+      transition: transform 0.2s;
+    }
+    .bot-card:hover .bot-card__chat-arrow { transform: translateX(3px); }
+    .bot-card:disabled .bot-card__chat { color: #CBD5E1; }
+
+    /* Mobile */
+    @media (max-width: 640px) {
+      body.dashboard-active .wrap { padding-left: 14px; padding-right: 14px; padding-bottom: 32px; }
+      .bold-hero { padding: 6px 0 18px; }
+      .bold-hero__title { font-size: 24px; line-height: 1.15; }
+      .bold-hero__subtitle { font-size: 13px; }
+      .bold-grid-cards { grid-template-columns: 1fr !important; gap: 12px; }
+    }
   </style>
 </head>
 <body>
@@ -836,9 +1119,17 @@
 
       <!-- Trang chủ: lưới bot (mặc định) -->
       <div id="panel-dashboard">
+        <div class="bold-hero">
+          <span class="bold-hero__badge">
+            <span class="bold-hero__dot"></span>
+            ASALE BOT TEAM
+          </span>
+          <h1 class="bold-hero__title">Đội ngũ AI Agent của bạn<span class="bold-hero__title-dot">.</span></h1>
+          <p class="bold-hero__subtitle">Mỗi agent mang một cá tính, một nhiệm vụ. Nhấn vào để bắt đầu trò chuyện.</p>
+        </div>
         <p id="grid-loading" class="sub">Đang tải…</p>
         <div id="grid-empty" class="hidden sub">Chưa có bot nào.</div>
-        <div id="bot-grid" class="bot-grid hidden" role="list"></div>
+        <div id="bot-grid" class="bold-grid-cards hidden" role="list"></div>
       </div>
 
       <!-- Quản lý: danh sách + popup thêm/sửa -->
@@ -1049,6 +1340,33 @@
         <div class="row">
           <label for="edit-bot-desc">Mô tả (Dashboard)</label>
           <textarea id="edit-bot-desc" class="modal-textarea" maxlength="2000" rows="2" placeholder="Mô tả ngắn…"></textarea>
+        </div>
+        <div class="row" style="display:flex;gap:10px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <label for="edit-bot-dept">Phòng ban</label>
+            <input id="edit-bot-dept" type="text" maxlength="64" placeholder="VD: SALE, CSKH, KHO…" autocomplete="off" list="edit-bot-dept-list" />
+            <datalist id="edit-bot-dept-list">
+              <option value="SALE"></option>
+              <option value="CSKH"></option>
+              <option value="MUA HÀNG"></option>
+              <option value="KHO"></option>
+              <option value="KẾ TOÁN"></option>
+              <option value="CHẤM CÔNG"></option>
+            </datalist>
+          </div>
+          <div style="flex:0 0 140px">
+            <label for="edit-bot-dept-color">Màu phòng ban</label>
+            <input id="edit-bot-dept-color" type="color" value="#64748B" style="width:100%;height:42px;padding:2px;border:1.5px solid #ddd;border-radius:6px;background:#fff;cursor:pointer" />
+            <p class="hint" style="margin:4px 0 0;font-size:11px">Để auto theo tên phòng ban nếu chưa đổi.</p>
+          </div>
+        </div>
+        <div class="row">
+          <label for="edit-bot-role">Vai trò (1 dòng hiển thị trên card)</label>
+          <input id="edit-bot-role" type="text" maxlength="255" placeholder="VD: Phụ trách quản lý đơn hàng" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="edit-bot-tasks">Nhiệm vụ (mỗi dòng 1 nhiệm vụ — card hiện tối đa 3 dòng đầu)</label>
+          <textarea id="edit-bot-tasks" class="modal-textarea" rows="3" placeholder="VD:&#10;Tạo đơn&#10;Check status đơn&#10;Nhắc đơn chưa hoàn thành"></textarea>
         </div>
         <div class="row">
           <label for="edit-bot-icon">Đổi icon (PNG, JPEG, WebP, GIF, SVG)</label>
@@ -1425,6 +1743,8 @@
       $('panel-python').classList.toggle('hidden', !isPython);
       $('panel-system').classList.toggle('hidden', !isSystem);
       $('panel-logs').classList.toggle('hidden', !isLogs);
+      // Áp gradient page-bg + ẩn .wrap padding-side khi ở trang dashboard mới
+      document.body.classList.toggle('dashboard-active', isDash);
       const toolbar = $('subpage-toolbar');
       if (toolbar) toolbar.classList.toggle('hidden', isDash);
       document.querySelectorAll('[data-admin-panel]').forEach((el) => {
@@ -1663,6 +1983,11 @@
       $('edit-bot-name').value = b.name;
       setCheckboxValues($('edit-bot-roles'), Array.isArray(b.allowedRoleNames) ? b.allowedRoleNames : []);
       $('edit-bot-desc').value = (b.description || '').trim();
+      $('edit-bot-dept').value = (b.dept || '').trim();
+      const dc = (b.deptColor || '').trim();
+      $('edit-bot-dept-color').value = /^#[0-9a-fA-F]{6}$/.test(dc) ? dc : '#64748B';
+      $('edit-bot-role').value = (b.role || '').trim();
+      $('edit-bot-tasks').value = Array.isArray(b.tasks) ? b.tasks.join('\n') : '';
       $('edit-bot-id-hint').textContent = 'ID: ' + id;
       $('edit-msg').classList.add('hidden');
       $('modal-edit-bot').classList.remove('hidden');
@@ -2057,6 +2382,27 @@
       return `/platform/api/bots/${encodeURIComponent(b.id)}/icon${v ? `?v=${v}` : ''}`;
     }
 
+    // Mặc định deptColor nếu admin chưa set (fallback theo dept name quen thuộc)
+    const DEPT_COLOR_DEFAULTS = {
+      'SALE': '#8B5CF6',
+      'CSKH': '#10B981',
+      'MUA HÀNG': '#F59E0B',
+      'KHO': '#F97316',
+      'KẾ TOÁN': '#0EA5E9',
+      'CHẤM CÔNG': '#EC4899',
+    };
+    function resolveDeptColor(dept, explicit) {
+      if (explicit && /^#[0-9a-fA-F]{6}$/.test(explicit)) return explicit;
+      const key = String(dept || '').trim().toUpperCase();
+      return DEPT_COLOR_DEFAULTS[key] || '#64748B';
+    }
+    // hex (#RRGGBB) + alpha byte (0–255) → 8-digit hex
+    function hexWithAlpha(hex, alpha) {
+      if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
+      const a = Math.max(0, Math.min(255, Math.round(alpha))).toString(16).padStart(2, '0');
+      return hex + a;
+    }
+
     function renderBotGrid(bots) {
       const grid = $('bot-grid');
       const empty = $('grid-empty');
@@ -2072,51 +2418,79 @@
       grid.classList.remove('hidden');
       grid.innerHTML = bots
         .map((b) => {
-          const st = b.status || 'pending';
-          let tileMod = '';
-          if (st === 'running') tileMod = ' is-running';
-          else if (st === 'error') tileMod = ' is-error';
-          const dis = !b.chatUrl ? ' disabled' : '';
-          const openAttr = b.chatUrl ? ` data-open-bot="${escapeHtml(b.chatUrl)}"` : '';
+          const dept = (b.dept || '').trim();
+          const deptColor = resolveDeptColor(dept, b.deptColor);
+          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(deptColor, 46)} 0%, ${hexWithAlpha(deptColor, 26)} 45%, ${hexWithAlpha(deptColor, 26)} 100%)`;
+          const online = Boolean(b.online);
+          const pillClass = online ? 'bot-card__pill--on' : 'bot-card__pill--off';
+          const pillText = online ? 'ONLINE' : 'OFFLINE';
+          const chatable = Boolean(b.chatUrl);
+          const dis = !chatable ? ' disabled' : '';
+          const openAttr = chatable ? ` data-open-bot="${escapeHtml(b.chatUrl)}"` : '';
+          const titleAttr = chatable
+            ? 'Mở trang bot trong tab mới (đăng nhập chat)'
+            : 'Bot chưa chạy — không mở được';
           const initial = escapeHtml((b.name || '?').trim().charAt(0).toUpperCase() || '?');
           const iconSrc = b.hasIcon ? botIconUrl(b) : '';
-          const iconImg =
-            iconSrc
-              ? `<img class="bot-tile-icon-img" alt="" data-bot-icon-for="${escapeHtml(b.id)}" src="${escapeHtml(iconSrc)}" loading="lazy" decoding="async" />`
-              : `<img class="bot-tile-icon-img hidden" alt="" data-bot-icon-for="${escapeHtml(b.id)}" />`;
-          const descRaw = (b.description || '').trim();
-          const descHtml = descRaw
-            ? `<span class="bot-tile-desc">${escapeHtml(descRaw)}</span>`
-            : '<span class="bot-tile-desc bot-tile-desc--empty">Chưa có mô tả</span>';
+          const iconImg = iconSrc
+            ? `<img class="bot-card__avatar-img" alt="" data-bot-icon-for="${escapeHtml(b.id)}" src="${escapeHtml(iconSrc)}" loading="lazy" decoding="async" />`
+            : '';
+          const role = (b.role || '').trim();
+          const desc = (b.description || '').trim();
+          const roleText = role || desc;
+          const tasks = Array.isArray(b.tasks) ? b.tasks.filter((t) => t && String(t).trim()).slice(0, 3) : [];
+          const tasksHtml = tasks.length
+            ? `<ul class="bot-card__tasks">${tasks
+                .map(
+                  (t) => `<li style="--dot:${deptColor}"><span style="width:4px;height:4px;border-radius:2px;background:${deptColor};flex-shrink:0;display:inline-block"></span><span>${escapeHtml(t)}</span></li>`
+                )
+                .join('')}</ul>`
+            : '<div class="bot-card__empty-role">Chưa có nhiệm vụ được liệt kê</div>';
+          const deptBadge = dept
+            ? `<span class="bot-card__dept" style="background:${deptColor}">${escapeHtml(dept)}</span>`
+            : '';
+          const handle = `@${String(b.id || '').slice(0, 8)}.ai`;
           return `
-          <button type="button" class="bot-tile${tileMod}" role="listitem"${dis}${openAttr}
-            title="${b.chatUrl ? 'Mở trang bot trong tab mới (đăng nhập chat)' : 'Bot chưa chạy — không mở được'}">
-            <div class="bot-tile-row">
-              <span class="bot-tile-icon-shell" aria-hidden="true">
-                ${iconImg}
-                <span class="bot-tile-icon-fallback">${initial}</span>
+          <button type="button" class="bot-card" role="listitem"${dis}${openAttr}
+            style="--bot-primary:${deptColor}"
+            title="${titleAttr}">
+            <div class="bot-card__banner" style="background:${bannerBg}">
+              <span class="bot-card__pill ${pillClass}">
+                <span class="bot-card__pill-dot"></span>
+                ${pillText}
               </span>
-              <div class="bot-tile-text">
-                <span class="bot-tile-name">${escapeHtml(b.name)}</span>
-                ${descHtml}
+              ${deptBadge}
+              <div class="bot-card__header-row">
+                <span class="bot-card__avatar" aria-hidden="true" data-avatar-shell style="${iconSrc ? '' : 'background:' + deptColor}">
+                  ${iconImg}
+                  <span class="bot-card__avatar-fallback"${iconSrc ? ' hidden' : ''}>${initial}</span>
+                </span>
+                <div class="bot-card__name-wrap">
+                  <div class="bot-card__name">${escapeHtml(b.name || '')}</div>
+                  <div class="bot-card__handle" style="color:${deptColor}">${escapeHtml(handle)}</div>
+                </div>
+              </div>
+            </div>
+            <div class="bot-card__body">
+              ${roleText ? `<div class="bot-card__role">${escapeHtml(roleText)}</div>` : '<div class="bot-card__role bot-card__empty-role">Chưa có mô tả</div>'}
+              ${tasksHtml}
+              <div class="bot-card__chat">
+                CHAT<span class="bot-card__chat-arrow">→</span>
               </div>
             </div>
           </button>`;
         })
         .join('');
-      // Ẩn fallback khi ảnh load OK; nếu lỗi thì để fallback.
-      grid.querySelectorAll('img.bot-tile-icon-img[src]').forEach((img) => {
-        const shell = img.closest('.bot-tile-icon-shell');
-        const fb = shell && shell.querySelector('.bot-tile-icon-fallback');
+      // Ẩn fallback khi icon load OK; lỗi thì giữ fallback.
+      grid.querySelectorAll('.bot-card__avatar-img').forEach((img) => {
+        const shell = img.closest('[data-avatar-shell]');
+        const fb = shell && shell.querySelector('.bot-card__avatar-fallback');
         if (!fb) return;
-        const hideFallback = () => fb.classList.add('hidden');
-        const showFallback = () => fb.classList.remove('hidden');
-        if (img.complete && img.naturalWidth > 0) {
-          hideFallback();
-          return;
-        }
-        img.addEventListener('load', hideFallback, { once: true });
-        img.addEventListener('error', showFallback, { once: true });
+        const hide = () => { fb.setAttribute('hidden', ''); shell.style.background = ''; };
+        const show = () => fb.removeAttribute('hidden');
+        if (img.complete && img.naturalWidth > 0) { hide(); return; }
+        img.addEventListener('load', hide, { once: true });
+        img.addEventListener('error', show, { once: true });
       });
     }
 
@@ -2165,9 +2539,14 @@
           description: b.description,
           status: b.status,
           statusMessage: b.statusMessage,
+          online: b.online,
           port: b.port,
           chatUrl: b.chatUrl,
           hasIcon: b.hasIcon,
+          dept: b.dept,
+          deptColor: b.deptColor,
+          role: b.role,
+          tasks: b.tasks,
           updatedAt: b.updatedAt,
           createdBotAt: b.createdBotAt,
         }))
@@ -2549,6 +2928,15 @@
       const name = $('edit-bot-name').value.trim();
       const description = $('edit-bot-desc').value.trim();
       const allowedRoleNames = checkboxValues($('edit-bot-roles'));
+      const dept = $('edit-bot-dept').value.trim();
+      const deptColorRaw = $('edit-bot-dept-color').value.trim();
+      // Gửi color nếu admin đặt khác default neutral gray; nếu để neutral thì gửi chuỗi rỗng để auto-derive từ tên dept
+      const deptColor = deptColorRaw && deptColorRaw.toLowerCase() !== '#64748b' ? deptColorRaw : '';
+      const role = $('edit-bot-role').value.trim();
+      const tasks = $('edit-bot-tasks').value
+        .split(/\r?\n/)
+        .map((s) => s.trim())
+        .filter(Boolean);
       const msg = $('edit-msg');
       msg.classList.add('hidden');
       if (!name) {
@@ -2568,7 +2956,7 @@
       const r = await api('/bots/' + encodeURIComponent(id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, allowedRoleNames }),
+        body: JSON.stringify({ name, description, allowedRoleNames, dept, deptColor, role, tasks }),
       });
       const d = await r.json();
       if (!d.success) {
