@@ -64,8 +64,10 @@ jobs:
 
             echo "==> Waiting for platform healthcheck (tối đa 60s)..."
             for i in $(seq 1 30); do
+              # dùng $PORT từ env của container (set theo PLATFORM_PORT trong compose),
+              # tránh hardcode port để compose linh hoạt
               if docker compose -f docker-compose.prod.yml exec -T platform \
-                   node -e "require('http').get('http://127.0.0.1:3980/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1));" \
+                   sh -c 'node -e "require(\"http\").get(\"http://127.0.0.1:\" + process.env.PORT + \"/health\", r => process.exit(r.statusCode === 200 ? 0 : 1)).on(\"error\", () => process.exit(1));"' \
                    2>/dev/null; then
                 echo "    OK after ${i} x 2s"
                 break

@@ -50,7 +50,10 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "${PLATFORM_PUBLISH_PORT:-3980}:3980"
+      # host:container — cả hai cùng lấy từ PORT trong .env (default 3980).
+      # Ghi đè PLATFORM_PUBLISH_PORT riêng nếu host port cần khác container port
+      # (ví dụ reverse proxy/nginx đã chiếm 3980).
+      - "${PLATFORM_PUBLISH_PORT:-${PORT:-3980}}:${PORT:-3980}"
     env_file:
       - path: .env
         required: false
@@ -58,7 +61,7 @@ services:
     environment:
       NODE_ENV: production
       PLATFORM_COOKIE_SECURE: ${PLATFORM_COOKIE_SECURE:-0}
-      PORT: "3980"
+      PORT: "${PORT:-3980}"
       PLATFORM_ADMIN_USER: ${PLATFORM_ADMIN_USER:-admin}
       PLATFORM_ADMIN_PASSWORD: ${PLATFORM_ADMIN_PASSWORD:-admin-dev-docker}
       PLATFORM_MANAGE_TAB_PASSWORD: ${PLATFORM_MANAGE_TAB_PASSWORD:-manage-tab-password}
