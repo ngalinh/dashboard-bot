@@ -17,7 +17,6 @@ jobs:
     timeout-minutes: 15
     environment:
       name: production
-      url: ${{ secrets.PUBLIC_ORIGIN }}
 
     steps:
       - name: Check required secrets
