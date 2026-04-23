@@ -13,71 +13,61 @@ Code migration (ALTER TABLE cột mới) chạy tự động trong Platform khi 
 
 Vào **Settings → Secrets and variables → Actions → New repository secret**:
 
-| Tên                | Giá trị                                                                                           |
-|--------------------|---------------------------------------------------------------------------------------------------|
-| `DEPLOY_HOST`      | IP hoặc hostname server (vd `103.200.xx.xx` hoặc `deploy.example.com`)                            |
-| `DEPLOY_USER`      | User SSH trên server (vd `deploy`, `ubuntu`). **Không nên là root.**                              |
-| `DEPLOY_PORT`      | (Optional) Port SSH nếu khác 22                                                                   |
-| `DEPLOY_SSH_KEY`   | Private key (nội dung file `id_ed25519`, **cả 2 dòng `BEGIN/END`**). Xem bước 2 bên dưới.         |
-| `DEPLOY_PATH`      | Đường dẫn tuyệt đối tới repo trên server (vd `/home/deploy/dashboard-bot`)                        |
-| `PUBLIC_ORIGIN`    | (Optional) URL production để hiển thị trong panel Deployments của Github                          |
+| Tên                | Giá trị                                                         |
+|--------------------|-----------------------------------------------------------------|
+| `DEPLOY_HOST`      | IP hoặc hostname server                                         |
+| `DEPLOY_USER`      | User SSH trên server (vd `vmadmin`, `deploy`, `ubuntu`)         |
+| `DEPLOY_PORT`      | (Optional) Port SSH nếu khác 22                                 |
+| `DEPLOY_SSH_KEY`   | Private key (nội dung file `id_ed25519`, cả 2 dòng BEGIN/END)   |
+| `DEPLOY_PATH`      | Đường dẫn tuyệt đối tới repo trên server (vd `/opt/dashboard-bot`) |
+| `PUBLIC_ORIGIN`    | (Optional) URL production hiện trong panel Deployments          |
 
 ## Setup server (1 lần)
 
-### 1) Tạo user deploy không phải root
-
-```bash
-# ssh vào server bằng root (lần duy nhất)
-adduser deploy
-usermod -aG docker deploy    # cho phép deploy chạy docker không cần sudo
-mkdir -p /home/deploy/.ssh
-chmod 700 /home/deploy/.ssh
-chown deploy:deploy /home/deploy/.ssh
-```
-
-### 2) Tạo SSH key riêng cho CI/CD
-
-Trên **máy local** của bạn (không phải runner):
+### 1) Tạo SSH key pair riêng cho CI/CD (trên máy local)
 
 ```bash
 ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/dashboard_bot_deploy -N ""
 ```
 
-Lệnh này tạo 2 file:
-- `~/.ssh/dashboard_bot_deploy`     — **private key** (paste vào secret `DEPLOY_SSH_KEY`)
-- `~/.ssh/dashboard_bot_deploy.pub` — public key (copy lên server bước kế tiếp)
+- `~/.ssh/dashboard_bot_deploy`     → paste nội dung vào secret `DEPLOY_SSH_KEY`
+- `~/.ssh/dashboard_bot_deploy.pub` → cài lên server (bước 2)
 
-### 3) Cài public key lên server cho user `deploy`
+### 2) Setup server
 
-```bash
-# copy nội dung file .pub lên server, thêm vào authorized_keys của user deploy
-ssh root@YOUR_SERVER "cat >> /home/deploy/.ssh/authorized_keys" < ~/.ssh/dashboard_bot_deploy.pub
-ssh root@YOUR_SERVER "chmod 600 /home/deploy/.ssh/authorized_keys && chown deploy:deploy /home/deploy/.ssh/authorized_keys"
-```
-
-Test: `ssh -i ~/.ssh/dashboard_bot_deploy deploy@YOUR_SERVER "echo OK"` — nếu ra `OK` là đúng.
-
-### 4) Clone repo trên server lần đầu
+SSH vào server với quyền sudo (user hiện có, vd `vmadmin` hoặc `ubuntu`). Chạy script:
 
 ```bash
-ssh deploy@YOUR_SERVER
-cd ~
-git clone https://github.com/ngalinh/dashboard-bot.git
-cd dashboard-bot
-# tạo .env (PLATFORM_ADMIN_USER, PLATFORM_ADMIN_PASSWORD, MYSQL_ROOT_PASSWORD, PUBLIC_ORIGIN...)
-cp .env.example .env && nano .env
+# Cài Docker (nếu chưa)
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER   # user hiện tại dùng docker không cần sudo (logout/in lại để active)
+
+# Add deploy public key vào authorized_keys của user hiện tại
+# (thay YOUR_PUBKEY bằng nội dung file .pub tạo ở bước 1)
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo 'YOUR_PUBKEY_LINE_HERE' >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+
+# Clone repo tại /opt/dashboard-bot
+sudo mkdir -p /opt
+sudo git clone https://github.com/ngalinh/dashboard-bot.git /opt/dashboard-bot
+sudo chown -R $USER:$USER /opt/dashboard-bot
+
+# Tạo .env (sửa PUBLIC_ORIGIN + các password)
+cd /opt/dashboard-bot
+nano .env     # hoặc: cp .env.example .env rồi sửa
+
+# Deploy lần đầu
 docker compose -f docker-compose.prod.yml up --build -d
 ```
 
-→ Đường dẫn này (`/home/deploy/dashboard-bot`) chính là giá trị của secret `DEPLOY_PATH`.
+### 3) Paste secrets vào Github
 
-### 5) Paste các secret vào Github
-
-Theo bảng ở trên. `DEPLOY_SSH_KEY` paste **nguyên nội dung** file `~/.ssh/dashboard_bot_deploy` (bao gồm `-----BEGIN OPENSSH PRIVATE KEY-----` và `-----END OPENSSH PRIVATE KEY-----`).
+Theo bảng ở đầu file. `DEPLOY_SSH_KEY` paste **nguyên nội dung** file `~/.ssh/dashboard_bot_deploy` (bao gồm 2 dòng `-----BEGIN/END OPENSSH PRIVATE KEY-----`).
 
 ## Test lần đầu
 
-Vào **Actions** tab trên Github → chọn workflow `Deploy to server` → **Run workflow** (nhánh `main`) → xem log.
+**Actions** tab → chọn workflow `Deploy to server` → **Run workflow** (nhánh `main`) → xem log.
 
 Hoặc đẩy 1 commit trivial lên `main` để trigger:
 
@@ -88,25 +78,22 @@ git push
 
 ## Rollback
 
-Nếu deploy lỗi cần revert về commit cũ:
-
 ```bash
-# trên máy local
+# Trên máy local
 git revert HEAD
-git push          # workflow tự chạy, deploy revert commit
+git push          # workflow tự chạy deploy revert commit
 ```
 
 Hoặc SSH trực tiếp vào server:
 
 ```bash
-ssh deploy@YOUR_SERVER
-cd /home/deploy/dashboard-bot
+cd /opt/dashboard-bot
 git reset --hard <commit_cu>
 docker compose -f docker-compose.prod.yml up --build -d
 ```
 
-## Các secret KHÔNG nên commit vào repo
+## KHÔNG commit các file nhạy cảm
 
-- `.env` (có `PLATFORM_ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `PLATFORM_SESSION_SECRET`…) — file này nằm ở server, **không** push lên Github
-- SSH private key — chỉ ở Github Secrets + máy local bạn, **không** commit vào repo
-- Nếu lỡ commit file nhạy cảm → rotate ngay (đổi password, revoke key) rồi dùng `git filter-repo` / BFG để xoá lịch sử
+- `.env` (có `PLATFORM_ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `PLATFORM_SESSION_SECRET`…) — nằm ở server, không push Github
+- SSH private key — chỉ ở Github Secrets + máy local, không commit
+- Nếu lỡ commit → rotate ngay (đổi password, revoke key) rồi xoá lịch sử bằng `git filter-repo` / BFG
