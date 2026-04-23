@@ -1076,24 +1076,24 @@ function VariationBold({ agents, avatarStyle, monogramVariant, density, accent }
               style={{
                 textDecoration: 'none',
                 background: '#FFFFFF',
-                borderRadius: 20,
+                borderRadius: 22,
                 overflow: 'hidden',
-                border: '1px solid rgba(226, 232, 240, 0.8)',
-                transition: 'transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease, border-color 0.2s',
-                transform: isHover ? 'translateY(-4px)' : 'translateY(0)',
+                position: 'relative',
+                transition: 'transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease',
+                transform: isHover ? 'translateY(-6px)' : 'translateY(0)',
                 boxShadow: isHover
-                  ? '0 24px 48px -12px rgba(15, 42, 63, 0.22), 0 4px 12px -4px rgba(15, 42, 63, 0.08)'
-                  : '0 6px 16px -4px rgba(15, 42, 63, 0.10), 0 2px 4px -1px rgba(15, 42, 63, 0.05)',
-                borderColor: isHover ? agent.palette.primary : 'rgba(226, 232, 240, 0.8)',
+                  ? `inset 0 0 0 1px ${agent.palette.primary}33, 0 1px 2px rgba(15,42,63,0.05), 0 14px 28px -6px rgba(15,42,63,0.14), 0 36px 64px -18px ${agent.palette.primary}66, 0 0 0 5px ${agent.palette.primary}1F`
+                  : `inset 0 0 0 1px rgba(15,42,63,0.06), 0 1px 2px rgba(15,42,63,0.05), 0 10px 22px -4px rgba(15,42,63,0.10), 0 26px 52px -14px ${agent.palette.primary}3D`,
                 display: 'flex',
                 flexDirection: 'column',
               }}
             >
               {/* Color banner with large avatar */}
               <div style={{
-                background: `linear-gradient(135deg, ${agent.palette.primary}2E 0%, ${agent.palette.bg} 45%, ${agent.palette.bg} 100%)`,
+                background: `linear-gradient(135deg, ${agent.palette.primary}4D 0%, ${agent.palette.primary}1F 40%, ${agent.palette.bg} 100%)`,
                 padding: density === 'compact' ? '18px 18px 14px' : '22px 22px 16px',
                 position: 'relative',
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5)`,
               }}>
                 {/* Dept badge */}
                 <div style={{

@@ -864,27 +864,38 @@
     .bot-card {
       position: relative;
       background: #FFFFFF;
-      border: 1px solid rgba(226,232,240,0.8);
-      border-radius: 20px;
+      border: none;
+      border-radius: 22px;
       overflow: hidden;
       display: flex;
       flex-direction: column;
       color: inherit;
       text-decoration: none;
-      transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s ease, border-color 0.2s;
-      box-shadow: 0 6px 16px -4px rgba(15,42,63,0.10), 0 2px 4px -1px rgba(15,42,63,0.05);
+      transition: transform 0.28s cubic-bezier(0.16,1,0.3,1), box-shadow 0.28s ease;
+      /* Layered shadow: inset ring (tạo viền mảnh), micro ambient, key, và drop shadow tint màu dept */
+      box-shadow:
+        inset 0 0 0 1px rgba(15,42,63,0.06),
+        0 1px 2px rgba(15,42,63,0.05),
+        0 10px 22px -4px rgba(15,42,63,0.10),
+        0 26px 52px -14px var(--bot-shadow-tint, rgba(15,42,63,0.20));
       cursor: pointer;
       font: inherit;
       text-align: left;
     }
     .bot-card:hover:not(:disabled) {
-      transform: translateY(-4px);
-      box-shadow: 0 24px 48px -12px rgba(15,42,63,0.22), 0 4px 12px -4px rgba(15,42,63,0.08);
+      transform: translateY(-6px);
+      box-shadow:
+        inset 0 0 0 1px var(--bot-ring-hover, rgba(15,42,63,0.10)),
+        0 1px 2px rgba(15,42,63,0.05),
+        0 14px 28px -6px rgba(15,42,63,0.14),
+        0 36px 64px -18px var(--bot-shadow-hover, rgba(15,42,63,0.36)),
+        0 0 0 5px var(--bot-halo, rgba(0,169,157,0.12));
     }
     .bot-card:disabled { cursor: not-allowed; opacity: 0.6; }
     .bot-card__banner {
       padding: 32px 18px 14px;
       position: relative;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
     }
     .bot-card__pill {
       position: absolute;
@@ -2486,7 +2497,13 @@
         .map((b) => {
           const dept = (b.dept || '').trim();
           const deptColor = resolveDeptColor(dept, b.deptColor);
-          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(deptColor, 46)} 0%, ${hexWithAlpha(deptColor, 26)} 45%, ${hexWithAlpha(deptColor, 26)} 100%)`;
+          // Banner gradient — đậm hơn ở góc trên-trái, fade qua bg tint phía dưới
+          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(deptColor, 77)} 0%, ${hexWithAlpha(deptColor, 31)} 40%, ${hexWithAlpha(deptColor, 21)} 100%)`;
+          // Shadow/halo tokens — pop card lên nền bg
+          const shadowTint = hexWithAlpha(deptColor, 61);   // ~24% alpha → drop shadow mặc định có tint màu dept
+          const shadowHover = hexWithAlpha(deptColor, 102); // ~40% alpha
+          const haloHover = hexWithAlpha(deptColor, 31);    // ~12% alpha
+          const ringHover = hexWithAlpha(deptColor, 61);    // ~24% alpha
           const online = Boolean(b.online);
           const pillClass = online ? 'bot-card__pill--on' : 'bot-card__pill--off';
           const pillText = online ? 'ONLINE' : 'OFFLINE';
@@ -2528,7 +2545,7 @@
           const handle = `@${String(b.id || '').slice(0, 8)}.ai`;
           return `
           <button type="button" class="bot-card" role="listitem"${dis}${openAttr}
-            style="--bot-primary:${deptColor}"
+            style="--bot-primary:${deptColor};--bot-shadow-tint:${shadowTint};--bot-shadow-hover:${shadowHover};--bot-halo:${haloHover};--bot-ring-hover:${ringHover}"
             title="${titleAttr}">
             <div class="bot-card__banner" style="background:${bannerBg}">
               ${pillHtml}
