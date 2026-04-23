@@ -1,0 +1,88 @@
+name: Deploy to server
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Chặn 2 job deploy chạy cùng lúc (tránh git pull race + docker compose recreate chồng)
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: SSH git pull + docker compose up
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: ${{ secrets.PUBLIC_ORIGIN }}
+
+    steps:
+      - name: Check required secrets
+        run: |
+          missing=0
+          for key in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing secret: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" = "1" ]; then exit 1; fi
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          # 8 phút cho build (npm install + docker build). Tăng nếu máy server yếu.
+          command_timeout: 8m
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            echo "==> Pre-deploy: $(git rev-parse --short HEAD) on $(git symbolic-ref --short HEAD 2>/dev/null || echo detached)"
+
+            git fetch --prune origin main
+            # Hard reset để không dính local drift (CI/CD là nguồn của sự thật)
+            git reset --hard origin/main
+
+            echo "==> Post-pull: $(git rev-parse --short HEAD)"
+
+            # Build + (re)create container ở chế độ detached.
+            # --build đảm bảo image mới được rebuild khi code đổi.
+            # --remove-orphans dọn service cũ nếu compose file đã rename.
+            docker compose -f docker-compose.prod.yml up --build -d --remove-orphans
+
+            echo "==> Waiting for platform healthcheck (tối đa 60s)..."
+            for i in $(seq 1 30); do
+              if docker compose -f docker-compose.prod.yml exec -T platform \
+                   node -e "require('http').get('http://127.0.0.1:3980/health', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1));" \
+                   2>/dev/null; then
+                echo "    OK after ${i} x 2s"
+                break
+              fi
+              if [ "$i" = "30" ]; then
+                echo "::error::Platform health check timeout"
+                docker compose -f docker-compose.prod.yml logs --tail=80 platform
+                exit 1
+              fi
+              sleep 2
+            done
+
+            echo "==> Container status:"
+            docker compose -f docker-compose.prod.yml ps
+
+            # Dọn image + build cache cũ để không phình ổ đĩa. Không xoá volume.
+            docker image prune -f >/dev/null
+            docker builder prune -f --filter "until=168h" >/dev/null
+
+            echo "==> Deploy xong: $(git log -1 --format='%h %s (%an, %ar)')"
