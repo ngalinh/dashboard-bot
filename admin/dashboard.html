@@ -917,15 +917,16 @@
       border-radius: 20px;
       z-index: 2;
     }
-    /* Khi pill là button (admin có quyền toggle) */
-    button.bot-card__pill {
+    /* Pill toggle cho admin — dùng <span role="button"> để không nested vào <button class="bot-card">. */
+    .bot-card__pill--toggle {
       cursor: pointer;
       font-family: inherit;
       transition: filter 0.15s, transform 0.15s;
     }
-    button.bot-card__pill:hover { filter: brightness(0.95); transform: translateY(-1px); }
-    button.bot-card__pill:disabled { cursor: wait; opacity: 0.6; }
-    button.bot-card__pill .bot-card__pill-spinner {
+    .bot-card__pill--toggle:hover { filter: brightness(0.95); transform: translateY(-1px); }
+    .bot-card__pill--toggle[aria-disabled="true"] { cursor: wait; opacity: 0.6; }
+    .bot-card__pill--toggle:focus-visible { outline: 2px solid rgba(15,42,63,0.35); outline-offset: 2px; }
+    .bot-card__pill .bot-card__pill-spinner {
       width: 10px; height: 10px; border-radius: 50%;
       border: 2px solid currentColor;
       border-right-color: transparent;
@@ -2523,6 +2524,7 @@
      * BE cũng có requirePlatformManageAccess. Khi tắt → confirm trước; bật → toggle ngay.
      */
     async function handleToggleOnline(pillEl, id, currentOnline) {
+      if (pillEl.getAttribute('aria-disabled') === 'true') return;
       const wantOnline = !currentOnline;
       const bot = cachedBots.find((x) => x.id === id);
       const botName = (bot && bot.name) || id;
@@ -2530,9 +2532,10 @@
         const ok = window.confirm(`Tắt bot «${botName}»?\n\nProcess sẽ dừng (pm2 stop), users không chat được tới khi bạn bật lại.`);
         if (!ok) return;
       }
-      // Optimistic UI: lock pill + spinner
+      // Optimistic UI: lock pill + spinner. Pill bây giờ là <span role="button"> nên
+      // dùng aria-disabled thay vì .disabled (chỉ áp dụng cho <button>).
       const wasHTML = pillEl.innerHTML;
-      pillEl.disabled = true;
+      pillEl.setAttribute('aria-disabled', 'true');
       pillEl.innerHTML = '<span class="bot-card__pill-spinner"></span>' + (wantOnline ? 'BẬT…' : 'TẮT…');
       try {
         const r = await api('/bots/' + encodeURIComponent(id) + '/online-toggle', {
@@ -2543,7 +2546,7 @@
         const d = await r.json().catch(() => ({}));
         if (!r.ok || !d.success) {
           window.alert('Không đổi được trạng thái: ' + (d.message || ('HTTP ' + r.status)));
-          pillEl.disabled = false;
+          pillEl.removeAttribute('aria-disabled');
           pillEl.innerHTML = wasHTML;
           return;
         }
@@ -2552,12 +2555,24 @@
         await loadBots();
       } catch (e) {
         window.alert('Lỗi mạng: ' + (e && e.message ? e.message : String(e)));
-        pillEl.disabled = false;
+        pillEl.removeAttribute('aria-disabled');
         pillEl.innerHTML = wasHTML;
       }
     }
 
     function bindBotActions(container) {
+      // Pill toggle là <span role="button"> → hỗ trợ Enter/Space như button thật.
+      container.addEventListener('keydown', (ev) => {
+        const t = ev.target;
+        if (!(t instanceof HTMLElement)) return;
+        const toggleHost = t.closest && t.closest('[data-toggle-online]');
+        if (!toggleHost || (ev.key !== 'Enter' && ev.key !== ' ')) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        const id = toggleHost.getAttribute('data-toggle-online');
+        const currentOnline = toggleHost.getAttribute('data-online-current') === '1';
+        handleToggleOnline(toggleHost, id, currentOnline);
+      });
       container.onclick = (ev) => {
         const t = ev.target;
         if (!(t instanceof HTMLElement)) return;
@@ -2695,12 +2710,14 @@
           // Placeholder = OFFLINE (chưa có process → không online), không cho toggle.
           const pillClass = (!isPlaceholder && online) ? 'bot-card__pill--on' : 'bot-card__pill--off';
           const pillText = (!isPlaceholder && online) ? 'ONLINE' : 'OFFLINE';
-          // Admin: pill là button toggle (chỉ cho bot thật). Placeholder / non-admin: pill tĩnh.
+          // Admin: pill hoạt động như button toggle (chỉ cho bot thật). Placeholder / non-admin: pill tĩnh.
+          // LƯU Ý: card outer cũng là <button>, không nested <button> được → dùng <span role="button">
+          // với tabindex để keyboard vẫn focus được; JS delegate click qua data-toggle-online.
           const pillHtml = (isAdmin && !isPlaceholder)
-            ? `<button type="button" class="bot-card__pill ${pillClass}" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
+            ? `<span class="bot-card__pill bot-card__pill--toggle ${pillClass}" role="button" tabindex="0" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
                  <span class="bot-card__pill-dot"></span>
                  ${pillText}
-               </button>`
+               </span>`
             : `<span class="bot-card__pill ${pillClass}">
                  <span class="bot-card__pill-dot"></span>
                  ${pillText}
