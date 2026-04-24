@@ -138,9 +138,9 @@
       min-width: 0;
     }
     .dashboard-header__logo {
-      height: 34px;
+      height: 28px;
       width: auto;
-      max-width: min(160px, 42vw);
+      max-width: min(140px, 36vw);
       display: block;
       object-fit: contain;
     }
@@ -153,28 +153,29 @@
       min-width: 0;
     }
     .header-icon-btn {
-      width: 42px;
-      height: 42px;
+      width: 36px;
+      height: 36px;
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 10px;
+      border-radius: 8px;
       flex-shrink: 0;
     }
     .header-icon-btn svg {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
       display: block;
     }
     .topbar-user {
-      font-size: 0.95rem;
-      color: rgba(255, 255, 255, 0.65);
+      font-size: 13px;
+      color: #94B8CD;
       text-align: left;
     }
     .topbar-user strong {
       color: #fff;
       font-weight: 600;
+      margin-left: 4px;
     }
     .dashboard-header .btn-ghost {
       color: rgba(255, 255, 255, 0.92);
@@ -277,8 +278,8 @@
     }
     @media (min-width: 720px) {
       .dashboard-header__logo {
-        height: 38px;
-        max-width: 200px;
+        height: 30px;
+        max-width: 160px;
       }
     }
     .subpage-toolbar { margin-bottom: 18px; }
@@ -850,7 +851,7 @@
     /* Grid */
     .bold-grid-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
       gap: 14px;
     }
     @media (min-width: 641px) and (max-width: 900px) {
@@ -2636,17 +2637,17 @@
       const key = String(dept || '').trim().toUpperCase();
       return DEPT_COLOR_DEFAULTS[key] || '#64748B';
     }
-    // Palette riêng cho 7 bot seed (preview/Dashboard.html) — dùng cho banner gradient và
-    // màu handle @xxx.ai. Dept color chỉ dùng cho dept badge ở banner góc phải.
-    // Bot user tự tạo sẽ fallback về dept color.
+    // Palette + handle slug cho 7 bot seed (preview/Dashboard.html) — dùng cho banner
+    // gradient, màu handle @xxx.ai và slug tên ngắn. Dept color chỉ dùng cho dept badge.
+    // Bot user tự tạo sẽ fallback về dept color + 8 ký tự đầu của id.
     const PLACEHOLDER_PALETTES = {
-      '8c1d56e7a76f2f57': { primary: '#00A7E1', bg: '#E0F4FA' }, // Bé Mon
-      '9a031e766d216717': { primary: '#2D5F8B', bg: '#E8EEF4' }, // Xeko
-      '4b146b5d9fa4ff70': { primary: '#7B4B94', bg: '#F0EAF5' }, // Deki
-      'a89bc5c75d21ca68': { primary: '#F4A7B9', bg: '#FDEEF2' }, // Bé Mi
-      'c0583a0220421828': { primary: '#F4B942', bg: '#FEF6E4' }, // Nobita
-      'e5f5323bdc7532ac': { primary: '#E76F51', bg: '#FBE8E2' }, // Chaien
-      'f4966e2d7c30ecb2': { primary: '#F9C5D5', bg: '#FEF0F4' }, // Xuka
+      '8c1d56e7a76f2f57': { primary: '#00A7E1', bg: '#E0F4FA', slug: 'mon' },
+      '9a031e766d216717': { primary: '#2D5F8B', bg: '#E8EEF4', slug: 'xeko' },
+      '4b146b5d9fa4ff70': { primary: '#7B4B94', bg: '#F0EAF5', slug: 'deki' },
+      'a89bc5c75d21ca68': { primary: '#F4A7B9', bg: '#FDEEF2', slug: 'mi' },
+      'c0583a0220421828': { primary: '#F4B942', bg: '#FEF6E4', slug: 'nobita' },
+      'e5f5323bdc7532ac': { primary: '#E76F51', bg: '#FBE8E2', slug: 'chaien' },
+      'f4966e2d7c30ecb2': { primary: '#F9C5D5', bg: '#FEF0F4', slug: 'xuka' },
     };
     // hex (#RRGGBB) + alpha byte (0–255) → 8-digit hex
     function hexWithAlpha(hex, alpha) {
@@ -2728,7 +2729,9 @@
           const deptBadge = dept
             ? `<span class="bot-card__dept" style="background:${deptColor}">${escapeHtml(dept)}</span>`
             : '';
-          const handle = `@${String(b.id || '').slice(0, 8)}.ai`;
+          const handle = palette && palette.slug
+            ? `@${palette.slug}.ai`
+            : `@${String(b.id || '').slice(0, 8)}.ai`;
           const footerHtml = isPlaceholder
             ? (isAdmin
                 ? `<div class="bot-card__chat bot-card__chat--upload">TẢI MÃ NGUỒN<span class="bot-card__chat-arrow">→</span></div>`
