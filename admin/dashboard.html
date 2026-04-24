@@ -933,14 +933,6 @@
       color: #64748B;
       border: 1px solid rgba(148,163,184,0.35);
     }
-    .bot-card__pill--placeholder {
-      background: rgba(148,163,184,0.12);
-      color: #64748B;
-      border: 1px dashed rgba(100,116,139,0.45);
-    }
-    /* Card placeholder: avatar/body vẫn màu thường nhưng dịu hơn + chat footer đặc biệt */
-    .bot-card--placeholder .bot-card__avatar { opacity: 0.85; }
-    .bot-card--placeholder .bot-card__name { color: #475569; }
     .bot-card__chat--upload { color: #0F2A3F; font-weight: 600; }
     .bot-card--placeholder:hover:not(:disabled) .bot-card__chat--upload { color: var(--bot-primary, #0F2A3F); }
     .bot-card__chat--coming { color: #94A3B8; font-style: italic; letter-spacing: 0.04em; }
@@ -2667,36 +2659,27 @@
           const deptColor = resolveDeptColor(dept, b.deptColor);
           const isPlaceholder = b.status === 'placeholder';
           // Banner gradient — đậm hơn ở góc trên-trái, fade qua bg tint phía dưới.
-          // Placeholder: banner xám nhạt để phân biệt với bot thật đang chạy/offline.
-          const bannerBg = isPlaceholder
-            ? 'linear-gradient(135deg, rgba(148,163,184,0.30) 0%, rgba(148,163,184,0.14) 40%, rgba(148,163,184,0.08) 100%)'
-            : `linear-gradient(135deg, ${hexWithAlpha(deptColor, 77)} 0%, ${hexWithAlpha(deptColor, 31)} 40%, ${hexWithAlpha(deptColor, 21)} 100%)`;
+          // Placeholder vẫn dùng dept color để card trông giống design preview.
+          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(deptColor, 77)} 0%, ${hexWithAlpha(deptColor, 31)} 40%, ${hexWithAlpha(deptColor, 21)} 100%)`;
           // Shadow/halo tokens — pop card lên nền bg
           const shadowTint = hexWithAlpha(deptColor, 61);   // ~24% alpha → drop shadow mặc định có tint màu dept
           const shadowHover = hexWithAlpha(deptColor, 102); // ~40% alpha
           const haloHover = hexWithAlpha(deptColor, 31);    // ~12% alpha
           const ringHover = hexWithAlpha(deptColor, 61);    // ~24% alpha
           const online = Boolean(b.online);
-          // Pill riêng cho placeholder (xám, không toggle online).
-          let pillHtml;
-          if (isPlaceholder) {
-            pillHtml = `<span class="bot-card__pill bot-card__pill--placeholder">
-                 <span class="bot-card__pill-dot"></span>
-                 CHƯA CÓ CODE
-               </span>`;
-          } else {
-            const pillClass = online ? 'bot-card__pill--on' : 'bot-card__pill--off';
-            const pillText = online ? 'ONLINE' : 'OFFLINE';
-            pillHtml = isAdmin
-              ? `<button type="button" class="bot-card__pill ${pillClass}" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
+          // Placeholder = OFFLINE (chưa có process → không online), không cho toggle.
+          const pillClass = (!isPlaceholder && online) ? 'bot-card__pill--on' : 'bot-card__pill--off';
+          const pillText = (!isPlaceholder && online) ? 'ONLINE' : 'OFFLINE';
+          // Admin: pill là button toggle (chỉ cho bot thật). Placeholder / non-admin: pill tĩnh.
+          const pillHtml = (isAdmin && !isPlaceholder)
+            ? `<button type="button" class="bot-card__pill ${pillClass}" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
                  <span class="bot-card__pill-dot"></span>
                  ${pillText}
                </button>`
-              : `<span class="bot-card__pill ${pillClass}">
+            : `<span class="bot-card__pill ${pillClass}">
                  <span class="bot-card__pill-dot"></span>
                  ${pillText}
                </span>`;
-          }
           // Placeholder: admin được upload source, user thường chỉ thấy thẻ coming-soon (disabled).
           const chatable = !isPlaceholder && Boolean(b.chatUrl);
           const dis = !chatable && !(isPlaceholder && isAdmin) ? ' disabled' : '';
