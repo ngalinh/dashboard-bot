@@ -49,9 +49,14 @@ jobs:
             cd "${{ secrets.DEPLOY_PATH }}"
 
             # Git 2.35.2+ từ chối repo có owner khác user đang chạy ("dubious ownership").
-            # Khi SSH user khác user đã clone repo (ví dụ root vs deploy), git sẽ fail.
-            # Whitelist DEPLOY_PATH để workflow chạy được bất kể owner.
-            git config --global --add safe.directory "${{ secrets.DEPLOY_PATH }}"
+            # Dùng wildcard '*' để trust mọi repo, tránh sai lệch do symlink/trailing-slash
+            # giữa DEPLOY_PATH và canonical path mà git nhìn thấy. Chạy trên deploy host
+            # đơn mục đích nên chấp nhận được.
+            git config --global --add safe.directory '*'
+
+            # Debug nhỏ phòng khi vẫn fail: cho biết user và config thực tế đang dùng.
+            echo "==> Runtime: user=$(id -un) home=$HOME"
+            git config --global --get-all safe.directory || true
 
             echo "==> Pre-deploy: $(git rev-parse --short HEAD) on $(git symbolic-ref --short HEAD 2>/dev/null || echo detached)"
 
