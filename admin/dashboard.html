@@ -848,14 +848,6 @@
     @media (min-width: 641px) and (max-width: 900px) {
       .bold-grid-cards { grid-template-columns: repeat(2, 1fr) !important; }
     }
-    @media (min-width: 1100px) {
-      .bold-grid-cards {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        max-width: 1200px;
-        margin: 0 auto;
-        gap: 18px;
-      }
-    }
 
     /* Bot card */
     .bot-card {
@@ -2633,6 +2625,18 @@
       const key = String(dept || '').trim().toUpperCase();
       return DEPT_COLOR_DEFAULTS[key] || '#64748B';
     }
+    // Palette riêng cho 7 bot seed (preview/Dashboard.html) — dùng cho banner gradient và
+    // màu handle @xxx.ai. Dept color chỉ dùng cho dept badge ở banner góc phải.
+    // Bot user tự tạo sẽ fallback về dept color.
+    const PLACEHOLDER_PALETTES = {
+      '8c1d56e7a76f2f57': { primary: '#00A7E1', bg: '#E0F4FA' }, // Bé Mon
+      '9a031e766d216717': { primary: '#2D5F8B', bg: '#E8EEF4' }, // Xeko
+      '4b146b5d9fa4ff70': { primary: '#7B4B94', bg: '#F0EAF5' }, // Deki
+      'a89bc5c75d21ca68': { primary: '#F4A7B9', bg: '#FDEEF2' }, // Bé Mi
+      'c0583a0220421828': { primary: '#F4B942', bg: '#FEF6E4' }, // Nobita
+      'e5f5323bdc7532ac': { primary: '#E76F51', bg: '#FBE8E2' }, // Chaien
+      'f4966e2d7c30ecb2': { primary: '#F9C5D5', bg: '#FEF0F4' }, // Xuka
+    };
     // hex (#RRGGBB) + alpha byte (0–255) → 8-digit hex
     function hexWithAlpha(hex, alpha) {
       if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return hex;
@@ -2659,14 +2663,17 @@
           const dept = (b.dept || '').trim();
           const deptColor = resolveDeptColor(dept, b.deptColor);
           const isPlaceholder = b.status === 'placeholder';
-          // Banner gradient — đậm hơn ở góc trên-trái, fade qua bg tint phía dưới.
-          // Placeholder vẫn dùng dept color để card trông giống design preview.
-          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(deptColor, 77)} 0%, ${hexWithAlpha(deptColor, 31)} 40%, ${hexWithAlpha(deptColor, 21)} 100%)`;
-          // Shadow/halo tokens — pop card lên nền bg
-          const shadowTint = hexWithAlpha(deptColor, 61);   // ~24% alpha → drop shadow mặc định có tint màu dept
-          const shadowHover = hexWithAlpha(deptColor, 102); // ~40% alpha
-          const haloHover = hexWithAlpha(deptColor, 31);    // ~12% alpha
-          const ringHover = hexWithAlpha(deptColor, 61);    // ~24% alpha
+          // Banner & handle dùng palette riêng từng bot (nếu có) — giống preview design
+          // trong đó mỗi bot có palette.primary + palette.bg khác với dept color.
+          const palette = PLACEHOLDER_PALETTES[b.id];
+          const primary = palette ? palette.primary : deptColor;
+          const bannerEnd = palette ? palette.bg : hexWithAlpha(deptColor, 21);
+          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(primary, 77)} 0%, ${hexWithAlpha(primary, 31)} 40%, ${bannerEnd} 100%)`;
+          // Shadow/halo tokens — pop card lên nền bg (dùng primary để match hover ring)
+          const shadowTint = hexWithAlpha(primary, 61);   // ~24% alpha → drop shadow mặc định có tint màu primary
+          const shadowHover = hexWithAlpha(primary, 102); // ~40% alpha
+          const haloHover = hexWithAlpha(primary, 31);    // ~12% alpha
+          const ringHover = hexWithAlpha(primary, 61);    // ~24% alpha
           const online = Boolean(b.online);
           // Placeholder = OFFLINE (chưa có process → không online), không cho toggle.
           const pillClass = (!isPlaceholder && online) ? 'bot-card__pill--on' : 'bot-card__pill--off';
@@ -2703,7 +2710,7 @@
           const tasksHtml = tasks.length
             ? `<ul class="bot-card__tasks">${tasks
                 .map(
-                  (t) => `<li style="--dot:${deptColor}"><span style="width:4px;height:4px;border-radius:2px;background:${deptColor};flex-shrink:0;display:inline-block"></span><span>${escapeHtml(t)}</span></li>`
+                  (t) => `<li style="--dot:${primary}"><span style="width:4px;height:4px;border-radius:2px;background:${primary};flex-shrink:0;display:inline-block"></span><span>${escapeHtml(t)}</span></li>`
                 )
                 .join('')}</ul>`
             : '<div class="bot-card__empty-role">Chưa có nhiệm vụ được liệt kê</div>';
@@ -2719,19 +2726,19 @@
           const cardClass = isPlaceholder ? 'bot-card bot-card--placeholder' : 'bot-card';
           return `
           <button type="button" class="${cardClass}" role="listitem"${dis}${openAttr}${uploadAttr}
-            style="--bot-primary:${deptColor};--bot-shadow-tint:${shadowTint};--bot-shadow-hover:${shadowHover};--bot-halo:${haloHover};--bot-ring-hover:${ringHover}"
+            style="--bot-primary:${primary};--bot-shadow-tint:${shadowTint};--bot-shadow-hover:${shadowHover};--bot-halo:${haloHover};--bot-ring-hover:${ringHover}"
             title="${titleAttr}">
             <div class="bot-card__banner" style="background:${bannerBg}">
               ${pillHtml}
               ${deptBadge}
               <div class="bot-card__header-row">
-                <span class="bot-card__avatar" aria-hidden="true" data-avatar-shell style="${iconSrc ? '' : 'background:' + deptColor}">
+                <span class="bot-card__avatar" aria-hidden="true" data-avatar-shell style="${iconSrc ? '' : 'background:' + primary}">
                   ${iconImg}
                   <span class="bot-card__avatar-fallback"${iconSrc ? ' hidden' : ''}>${initial}</span>
                 </span>
                 <div class="bot-card__name-wrap">
                   <div class="bot-card__name">${escapeHtml(b.name || '')}</div>
-                  <div class="bot-card__handle" style="color:${deptColor}">${escapeHtml(handle)}</div>
+                  <div class="bot-card__handle" style="color:${primary}">${escapeHtml(handle)}</div>
                 </div>
               </div>
             </div>
