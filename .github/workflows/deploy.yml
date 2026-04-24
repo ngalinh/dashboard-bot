@@ -48,6 +48,11 @@ jobs:
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
 
+            # Git 2.35.2+ từ chối repo có owner khác user đang chạy ("dubious ownership").
+            # Khi SSH user khác user đã clone repo (ví dụ root vs deploy), git sẽ fail.
+            # Whitelist DEPLOY_PATH để workflow chạy được bất kể owner.
+            git config --global --add safe.directory "${{ secrets.DEPLOY_PATH }}"
+
             echo "==> Pre-deploy: $(git rev-parse --short HEAD) on $(git symbolic-ref --short HEAD 2>/dev/null || echo detached)"
 
             git fetch --prune origin main
