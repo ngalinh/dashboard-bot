@@ -790,7 +790,12 @@
       background: #E9EEF4;
       min-height: 100vh;
     }
-    body.dashboard-active .wrap { padding-top: 0; padding-bottom: 60px; }
+    /* Bỏ max-width bó của .wrap ở trang dashboard để grid 4+ cột được hiển thị trên
+       viewport rộng, khớp preview design (container full-width, chỉ grid có 280px minmax). */
+    body.dashboard-active .wrap {
+      max-width: none;
+      padding: 0 32px 60px;
+    }
 
     /* Hero */
     .bold-hero {
