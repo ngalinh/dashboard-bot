@@ -933,6 +933,17 @@
       color: #64748B;
       border: 1px solid rgba(148,163,184,0.35);
     }
+    .bot-card__pill--placeholder {
+      background: rgba(148,163,184,0.12);
+      color: #64748B;
+      border: 1px dashed rgba(100,116,139,0.45);
+    }
+    /* Card placeholder: avatar/body vẫn màu thường nhưng dịu hơn + chat footer đặc biệt */
+    .bot-card--placeholder .bot-card__avatar { opacity: 0.85; }
+    .bot-card--placeholder .bot-card__name { color: #475569; }
+    .bot-card__chat--upload { color: #0F2A3F; font-weight: 600; }
+    .bot-card--placeholder:hover:not(:disabled) .bot-card__chat--upload { color: var(--bot-primary, #0F2A3F); }
+    .bot-card__chat--coming { color: #94A3B8; font-style: italic; letter-spacing: 0.04em; }
     .bot-card__pill-dot {
       width: 7px; height: 7px; border-radius: 50%;
       background: #94A3B8;
@@ -1405,6 +1416,25 @@
           <button type="button" class="btn-primary" id="btn-save-edit">Lưu</button>
           <button type="button" class="btn-ghost" id="modal-edit-cancel">Hủy</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup: upload source vào bot placeholder -->
+  <div id="modal-upload-source" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-upload-source-title">
+      <button type="button" class="modal-close" id="modal-upload-source-close" aria-label="Đóng">&times;</button>
+      <h2 id="modal-upload-source-title">Tải mã nguồn cho bot</h2>
+      <p class="hint" id="modal-upload-source-sub" style="margin-bottom:14px"></p>
+      <div class="row">
+        <label>File server.zip</label>
+        <input id="modal-upload-source-zip" type="file" accept=".zip,application/zip" />
+        <p class="hint">Zip chứa package.json (ở gốc hoặc trong server/). Metadata và icon hiện tại được giữ nguyên.</p>
+      </div>
+      <div id="modal-upload-source-msg" class="hidden" style="margin-top:10px"></div>
+      <div class="modal-actions">
+        <button type="button" class="btn-primary" id="modal-upload-source-submit">Tải lên</button>
+        <button type="button" class="btn-ghost" id="modal-upload-source-cancel">Hủy</button>
       </div>
     </div>
   </div>
@@ -2041,6 +2071,81 @@
     $('modal-edit-bot').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
     $('modal-edit-bot').addEventListener('click', () => closeEditModal());
 
+    let uploadSourceBotId = null;
+    function closeUploadSourceModal() {
+      uploadSourceBotId = null;
+      $('modal-upload-source').classList.add('hidden');
+      $('modal-upload-source').setAttribute('aria-hidden', 'true');
+      $('modal-upload-source-zip').value = '';
+      const msg = $('modal-upload-source-msg');
+      msg.textContent = '';
+      msg.className = 'hidden';
+      $('modal-upload-source-submit').disabled = false;
+    }
+    function openUploadSourceModal(id) {
+      const bot = (cachedBots || []).find((b) => b.id === id);
+      uploadSourceBotId = id;
+      $('modal-upload-source-sub').textContent = bot
+        ? `${bot.name || id} · ${bot.dept || '—'}`
+        : id;
+      $('modal-upload-source-zip').value = '';
+      const msg = $('modal-upload-source-msg');
+      msg.textContent = '';
+      msg.className = 'hidden';
+      $('modal-upload-source-submit').disabled = false;
+      $('modal-upload-source').classList.remove('hidden');
+      $('modal-upload-source').setAttribute('aria-hidden', 'false');
+    }
+    $('modal-upload-source-close').onclick = () => closeUploadSourceModal();
+    $('modal-upload-source-cancel').onclick = () => closeUploadSourceModal();
+    $('modal-upload-source').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
+    $('modal-upload-source').addEventListener('click', () => closeUploadSourceModal());
+    $('modal-upload-source-submit').onclick = async () => {
+      if (!uploadSourceBotId) return;
+      const file = $('modal-upload-source-zip').files[0];
+      const msg = $('modal-upload-source-msg');
+      msg.className = 'hidden';
+      msg.textContent = '';
+      if (!file) {
+        msg.textContent = 'Chọn file .zip.';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        return;
+      }
+      const fd = new FormData();
+      fd.append('archive', file);
+      const token = localStorage.getItem(LS);
+      const headers = {};
+      if (token) headers['Authorization'] = 'Bearer ' + token;
+      $('modal-upload-source-submit').disabled = true;
+      try {
+        const r = await fetch('/platform/api/bots/' + encodeURIComponent(uploadSourceBotId) + '/source', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers,
+          body: fd,
+        });
+        if (r.status === 401) { sessionExpired(); return; }
+        const d = await r.json();
+        if (!d.success) {
+          msg.textContent = d.message || 'Lỗi upload';
+          msg.className = 'err';
+          msg.classList.remove('hidden');
+          $('modal-upload-source-submit').disabled = false;
+          return;
+        }
+        const finishedId = uploadSourceBotId;
+        closeUploadSourceModal();
+        loadBots();
+        openEnvWizard(finishedId);
+      } catch (e) {
+        msg.textContent = (e && e.message) || 'Lỗi mạng';
+        msg.className = 'err';
+        msg.classList.remove('hidden');
+        $('modal-upload-source-submit').disabled = false;
+      }
+    };
+
     let logsBotId = null;
     let logsCache = null;
 
@@ -2152,6 +2257,7 @@
       if (e.key !== 'Escape') return;
       if (!$('modal-add-bot').classList.contains('hidden')) closeAddModal();
       else if (!$('modal-edit-bot').classList.contains('hidden')) closeEditModal();
+      else if (!$('modal-upload-source').classList.contains('hidden')) closeUploadSourceModal();
       else if (!$('modal-bot-logs').classList.contains('hidden')) closeLogsModal();
       else if (!$('modal-bot-env').classList.contains('hidden')) closeEnvModal();
       else if (!$('modal-manage-lock').classList.contains('hidden')) closeManageLockModal();
@@ -2411,6 +2517,13 @@
           window.open(botOpenTargetUrl(openBot), '_blank', 'noopener');
           return;
         }
+        const uploadHost = t.closest && t.closest('[data-upload-source]');
+        const uploadId = uploadHost && uploadHost.getAttribute('data-upload-source');
+        if (uploadId) {
+          ev.preventDefault();
+          openUploadSourceModal(uploadId);
+          return;
+        }
         const pop = t.getAttribute('data-popup');
         if (pop) {
           window.open(botOpenTargetUrl(pop), 'bot-chat', 'width=520,height=820,noopener');
@@ -2494,32 +2607,48 @@
         .map((b) => {
           const dept = (b.dept || '').trim();
           const deptColor = resolveDeptColor(dept, b.deptColor);
-          // Banner gradient — đậm hơn ở góc trên-trái, fade qua bg tint phía dưới
-          const bannerBg = `linear-gradient(135deg, ${hexWithAlpha(deptColor, 77)} 0%, ${hexWithAlpha(deptColor, 31)} 40%, ${hexWithAlpha(deptColor, 21)} 100%)`;
+          const isPlaceholder = b.status === 'placeholder';
+          // Banner gradient — đậm hơn ở góc trên-trái, fade qua bg tint phía dưới.
+          // Placeholder: banner xám nhạt để phân biệt với bot thật đang chạy/offline.
+          const bannerBg = isPlaceholder
+            ? 'linear-gradient(135deg, rgba(148,163,184,0.30) 0%, rgba(148,163,184,0.14) 40%, rgba(148,163,184,0.08) 100%)'
+            : `linear-gradient(135deg, ${hexWithAlpha(deptColor, 77)} 0%, ${hexWithAlpha(deptColor, 31)} 40%, ${hexWithAlpha(deptColor, 21)} 100%)`;
           // Shadow/halo tokens — pop card lên nền bg
           const shadowTint = hexWithAlpha(deptColor, 61);   // ~24% alpha → drop shadow mặc định có tint màu dept
           const shadowHover = hexWithAlpha(deptColor, 102); // ~40% alpha
           const haloHover = hexWithAlpha(deptColor, 31);    // ~12% alpha
           const ringHover = hexWithAlpha(deptColor, 61);    // ~24% alpha
           const online = Boolean(b.online);
-          const pillClass = online ? 'bot-card__pill--on' : 'bot-card__pill--off';
-          const pillText = online ? 'ONLINE' : 'OFFLINE';
-          // Admin: pill là button toggle. Non-admin: pill tĩnh.
-          const pillHtml = isAdmin
-            ? `<button type="button" class="bot-card__pill ${pillClass}" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
+          // Pill riêng cho placeholder (xám, không toggle online).
+          let pillHtml;
+          if (isPlaceholder) {
+            pillHtml = `<span class="bot-card__pill bot-card__pill--placeholder">
+                 <span class="bot-card__pill-dot"></span>
+                 CHƯA CÓ CODE
+               </span>`;
+          } else {
+            const pillClass = online ? 'bot-card__pill--on' : 'bot-card__pill--off';
+            const pillText = online ? 'ONLINE' : 'OFFLINE';
+            pillHtml = isAdmin
+              ? `<button type="button" class="bot-card__pill ${pillClass}" data-toggle-online="${escapeHtml(b.id)}" data-online-current="${online ? '1' : '0'}" title="${online ? 'Click để TẮT bot này' : 'Click để BẬT bot này'}">
                  <span class="bot-card__pill-dot"></span>
                  ${pillText}
                </button>`
-            : `<span class="bot-card__pill ${pillClass}">
+              : `<span class="bot-card__pill ${pillClass}">
                  <span class="bot-card__pill-dot"></span>
                  ${pillText}
                </span>`;
-          const chatable = Boolean(b.chatUrl);
-          const dis = !chatable ? ' disabled' : '';
+          }
+          // Placeholder: admin được upload source, user thường chỉ thấy thẻ coming-soon (disabled).
+          const chatable = !isPlaceholder && Boolean(b.chatUrl);
+          const dis = !chatable && !(isPlaceholder && isAdmin) ? ' disabled' : '';
           const openAttr = chatable ? ` data-open-bot="${escapeHtml(b.chatUrl)}"` : '';
-          const titleAttr = chatable
-            ? 'Mở trang bot trong tab mới (đăng nhập chat)'
-            : 'Bot chưa chạy — không mở được';
+          const uploadAttr = isPlaceholder && isAdmin ? ` data-upload-source="${escapeHtml(b.id)}"` : '';
+          const titleAttr = isPlaceholder
+            ? (isAdmin ? 'Tải lên server.zip để kích hoạt bot' : 'Bot đang chuẩn bị — sẽ mở trong bản cập nhật tới')
+            : (chatable
+              ? 'Mở trang bot trong tab mới (đăng nhập chat)'
+              : 'Bot chưa chạy — không mở được');
           const initial = escapeHtml((b.name || '?').trim().charAt(0).toUpperCase() || '?');
           const iconSrc = b.hasIcon ? botIconUrl(b) : '';
           const iconImg = iconSrc
@@ -2540,8 +2669,14 @@
             ? `<span class="bot-card__dept" style="background:${deptColor}">${escapeHtml(dept)}</span>`
             : '';
           const handle = `@${String(b.id || '').slice(0, 8)}.ai`;
+          const footerHtml = isPlaceholder
+            ? (isAdmin
+                ? `<div class="bot-card__chat bot-card__chat--upload">TẢI MÃ NGUỒN<span class="bot-card__chat-arrow">→</span></div>`
+                : `<div class="bot-card__chat bot-card__chat--coming">SẮP CÓ</div>`)
+            : `<div class="bot-card__chat">CHAT<span class="bot-card__chat-arrow">→</span></div>`;
+          const cardClass = isPlaceholder ? 'bot-card bot-card--placeholder' : 'bot-card';
           return `
-          <button type="button" class="bot-card" role="listitem"${dis}${openAttr}
+          <button type="button" class="${cardClass}" role="listitem"${dis}${openAttr}${uploadAttr}
             style="--bot-primary:${deptColor};--bot-shadow-tint:${shadowTint};--bot-shadow-hover:${shadowHover};--bot-halo:${haloHover};--bot-ring-hover:${ringHover}"
             title="${titleAttr}">
             <div class="bot-card__banner" style="background:${bannerBg}">
@@ -2561,9 +2696,7 @@
             <div class="bot-card__body">
               ${roleText ? `<div class="bot-card__role">${escapeHtml(roleText)}</div>` : '<div class="bot-card__role bot-card__empty-role">Chưa có mô tả</div>'}
               ${tasksHtml}
-              <div class="bot-card__chat">
-                CHAT<span class="bot-card__chat-arrow">→</span>
-              </div>
+              ${footerHtml}
             </div>
           </button>`;
         })

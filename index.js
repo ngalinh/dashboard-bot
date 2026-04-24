@@ -10,6 +10,7 @@ const registry = require('./lib/registry');
 const platformRoutes = require('./lib/routes');
 const service = require('./lib/service');
 const auth = require('./lib/auth');
+const { ensurePlaceholderSeed } = require('./lib/placeholder-seed');
 const { normalizeBotId } = require('./lib/bot-id');
 const { readPlatformTokenFromReq } = require('./lib/platform-cookie');
 
@@ -293,6 +294,11 @@ const PORT = parseInt(process.env.PORT || '3980', 10);
     process.exit(1);
   }
   service.ensureDirs();
+  try {
+    await ensurePlaceholderSeed();
+  } catch (e) {
+    console.error('[platform] Placeholder seed failed:', e.message || e);
+  }
   app.listen(PORT, () => {
     console.log(`[platform] http://localhost:${PORT}`);
     console.log(`[platform] Admin UI: http://localhost:${PORT}/admin/dashboard.html`);
