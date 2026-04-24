@@ -795,10 +795,11 @@
       min-height: 100vh;
     }
     /* Bỏ max-width bó của .wrap ở trang dashboard để grid 4+ cột được hiển thị trên
-       viewport rộng, khớp preview design (container full-width, chỉ grid có 280px minmax). */
+       viewport rộng, khớp preview design (container full-width, chỉ grid có 280px minmax).
+       padding top 28px = khoảng trống giữa header và badge ASALE BOT TEAM, giống preview. */
     body.dashboard-active .wrap {
       max-width: none;
-      padding: 0 32px 60px;
+      padding: 28px 32px 60px;
     }
 
     /* Hero */
@@ -851,7 +852,7 @@
     /* Grid */
     .bold-grid-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 14px;
     }
     @media (min-width: 641px) and (max-width: 900px) {
