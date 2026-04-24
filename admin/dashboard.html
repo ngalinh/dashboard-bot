@@ -895,6 +895,9 @@
         0 0 0 5px var(--bot-halo, rgba(0,169,157,0.12));
     }
     .bot-card:disabled { cursor: not-allowed; opacity: 0.6; }
+    /* Placeholder card cho non-admin: disabled để không click được, nhưng giữ nguyên màu —
+       design không có state xám mờ, chỉ pill OFFLINE làm tín hiệu "chưa có code". */
+    .bot-card--placeholder:disabled { opacity: 1; }
     .bot-card__banner {
       padding: 18px 18px 14px;
       position: relative;
