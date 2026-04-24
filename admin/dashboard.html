@@ -1420,20 +1420,39 @@
     </div>
   </div>
 
-  <!-- Popup: upload source vào bot placeholder -->
+  <!-- Popup: upload source vào bot placeholder (Upload zip | Clone GitHub) -->
   <div id="modal-upload-source" class="modal-backdrop hidden" role="presentation" aria-hidden="true">
-    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-upload-source-title">
+    <div class="modal-dialog modal-dialog--form" role="dialog" aria-modal="true" aria-labelledby="modal-upload-source-title">
       <button type="button" class="modal-close" id="modal-upload-source-close" aria-label="Đóng">&times;</button>
       <h2 id="modal-upload-source-title">Tải mã nguồn cho bot</h2>
-      <p class="hint" id="modal-upload-source-sub" style="margin-bottom:14px"></p>
-      <div class="row">
-        <label>File server.zip</label>
-        <input id="modal-upload-source-zip" type="file" accept=".zip,application/zip" />
-        <p class="hint">Zip chứa package.json (ở gốc hoặc trong server/). Metadata và icon hiện tại được giữ nguyên.</p>
+      <p class="hint" id="modal-upload-source-sub" style="margin-bottom:12px"></p>
+      <div class="modal-tabs" role="tablist">
+        <button type="button" class="modal-tab active" id="src-tab-btn-zip" data-src-tab="zip" role="tab" aria-selected="true">Upload zip</button>
+        <button type="button" class="modal-tab" id="src-tab-btn-git" data-src-tab="git" role="tab" aria-selected="false">Clone GitHub</button>
+      </div>
+      <div class="modal-form-scroll">
+        <div id="src-tab-zip" class="add-tab-panel">
+          <div class="row">
+            <label>File server.zip</label>
+            <input id="modal-upload-source-zip" type="file" accept=".zip,application/zip" />
+            <p class="hint">Zip có <code>server/</code> + <code>index.html</code>, <code>server/</code> chứa <code>index.js</code>, <code>package.json</code>, <code>.env.example</code>. Metadata &amp; icon bot được giữ nguyên.</p>
+          </div>
+        </div>
+        <div id="src-tab-git" class="add-tab-panel hidden">
+          <div class="row">
+            <label>URL repo (HTTPS)</label>
+            <input id="modal-upload-source-git-url" type="url" placeholder="https://github.com/you/example-chat-bot" autocomplete="off" />
+          </div>
+          <div class="row">
+            <label>Nhánh (tuỳ chọn)</label>
+            <input id="modal-upload-source-git-branch" type="text" placeholder="main" autocomplete="off" />
+          </div>
+          <p class="hint">Chỉ <code>github.com</code> HTTPS. Private: <code>GITHUB_CLONE_TOKEN</code> trên server. Repo nên có cấu trúc <code>server/</code> + <code>index.html</code>.</p>
+        </div>
       </div>
       <div id="modal-upload-source-msg" class="hidden" style="margin-top:10px"></div>
       <div class="modal-actions">
-        <button type="button" class="btn-primary" id="modal-upload-source-submit">Tải lên</button>
+        <button type="button" class="btn-primary" id="modal-upload-source-submit">Triển khai</button>
         <button type="button" class="btn-ghost" id="modal-upload-source-cancel">Hủy</button>
       </div>
     </div>
@@ -2072,11 +2091,25 @@
     $('modal-edit-bot').addEventListener('click', () => closeEditModal());
 
     let uploadSourceBotId = null;
+    let uploadSourceTab = 'zip';
+    function setUploadSourceTab(tab) {
+      uploadSourceTab = tab === 'git' ? 'git' : 'zip';
+      const zipActive = uploadSourceTab === 'zip';
+      $('src-tab-btn-zip').classList.toggle('active', zipActive);
+      $('src-tab-btn-zip').setAttribute('aria-selected', zipActive ? 'true' : 'false');
+      $('src-tab-btn-git').classList.toggle('active', !zipActive);
+      $('src-tab-btn-git').setAttribute('aria-selected', !zipActive ? 'true' : 'false');
+      $('src-tab-zip').classList.toggle('hidden', !zipActive);
+      $('src-tab-git').classList.toggle('hidden', zipActive);
+      $('modal-upload-source-submit').textContent = zipActive ? 'Upload & triển khai' : 'Clone & triển khai';
+    }
     function closeUploadSourceModal() {
       uploadSourceBotId = null;
       $('modal-upload-source').classList.add('hidden');
       $('modal-upload-source').setAttribute('aria-hidden', 'true');
       $('modal-upload-source-zip').value = '';
+      $('modal-upload-source-git-url').value = '';
+      $('modal-upload-source-git-branch').value = '';
       const msg = $('modal-upload-source-msg');
       msg.textContent = '';
       msg.className = 'hidden';
@@ -2089,10 +2122,13 @@
         ? `${bot.name || id} · ${bot.dept || '—'}`
         : id;
       $('modal-upload-source-zip').value = '';
+      $('modal-upload-source-git-url').value = '';
+      $('modal-upload-source-git-branch').value = '';
       const msg = $('modal-upload-source-msg');
       msg.textContent = '';
       msg.className = 'hidden';
       $('modal-upload-source-submit').disabled = false;
+      setUploadSourceTab('zip');
       $('modal-upload-source').classList.remove('hidden');
       $('modal-upload-source').setAttribute('aria-hidden', 'false');
     }
@@ -2100,35 +2136,57 @@
     $('modal-upload-source-cancel').onclick = () => closeUploadSourceModal();
     $('modal-upload-source').querySelector('.modal-dialog').addEventListener('click', (e) => e.stopPropagation());
     $('modal-upload-source').addEventListener('click', () => closeUploadSourceModal());
+    $('src-tab-btn-zip').onclick = () => setUploadSourceTab('zip');
+    $('src-tab-btn-git').onclick = () => setUploadSourceTab('git');
     $('modal-upload-source-submit').onclick = async () => {
       if (!uploadSourceBotId) return;
-      const file = $('modal-upload-source-zip').files[0];
       const msg = $('modal-upload-source-msg');
       msg.className = 'hidden';
       msg.textContent = '';
-      if (!file) {
-        msg.textContent = 'Chọn file .zip.';
-        msg.className = 'err';
-        msg.classList.remove('hidden');
-        return;
-      }
-      const fd = new FormData();
-      fd.append('archive', file);
       const token = localStorage.getItem(LS);
-      const headers = {};
-      if (token) headers['Authorization'] = 'Bearer ' + token;
+      const baseHeaders = {};
+      if (token) baseHeaders['Authorization'] = 'Bearer ' + token;
+      let req;
+      if (uploadSourceTab === 'git') {
+        const gitUrl = $('modal-upload-source-git-url').value.trim();
+        const branch = $('modal-upload-source-git-branch').value.trim();
+        if (!gitUrl) {
+          msg.textContent = 'Nhập URL repo GitHub (HTTPS).';
+          msg.className = 'err';
+          msg.classList.remove('hidden');
+          return;
+        }
+        req = {
+          url: '/platform/api/bots/' + encodeURIComponent(uploadSourceBotId) + '/source/git',
+          init: {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { ...baseHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ gitUrl, branch }),
+          },
+        };
+      } else {
+        const file = $('modal-upload-source-zip').files[0];
+        if (!file) {
+          msg.textContent = 'Chọn file .zip.';
+          msg.className = 'err';
+          msg.classList.remove('hidden');
+          return;
+        }
+        const fd = new FormData();
+        fd.append('archive', file);
+        req = {
+          url: '/platform/api/bots/' + encodeURIComponent(uploadSourceBotId) + '/source',
+          init: { method: 'POST', credentials: 'same-origin', headers: baseHeaders, body: fd },
+        };
+      }
       $('modal-upload-source-submit').disabled = true;
       try {
-        const r = await fetch('/platform/api/bots/' + encodeURIComponent(uploadSourceBotId) + '/source', {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers,
-          body: fd,
-        });
+        const r = await fetch(req.url, req.init);
         if (r.status === 401) { sessionExpired(); return; }
         const d = await r.json();
         if (!d.success) {
-          msg.textContent = d.message || 'Lỗi upload';
+          msg.textContent = d.message || 'Lỗi';
           msg.className = 'err';
           msg.classList.remove('hidden');
           $('modal-upload-source-submit').disabled = false;
