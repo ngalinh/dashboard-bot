@@ -48,11 +48,13 @@ fi
 echo "==> Source: $SRC ($($CONVERT identify -format '%wx%h' "$SRC" 2>/dev/null || echo '?'))"
 echo "==> Output: $DEST_DIR"
 
-# Logo chiếm 80% canvas (10% padding mỗi cạnh) → trông cân đối, không bị
-# tràn sát mép khi crop thành icon tròn (iOS) hoặc squircle (Android adaptive).
-# Padding tô màu navy `#1d3a52` cho khớp brand background của logo Basso AI.
+# Logo (phần ảnh bên trong) shrink còn 80% canvas, NỀN giữ nguyên — auto
+# detect màu nền từ pixel góc trái-trên của source để padding match khớp
+# (không bị seam). Cách dùng: crop hình logo nhỏ lại 20%, giữ visual tổng
+# thể như cũ về màu nền.
 INNER_PCT=80
-PAD_BG="#1d3a52"
+PAD_BG="$($CONVERT "$SRC" -format '%[pixel:p{0,0}]' info: 2>/dev/null || echo '#1d3a52')"
+echo "==> Background color (auto-detect từ source góc trái-trên): $PAD_BG"
 
 resize() {
   size="$1"
