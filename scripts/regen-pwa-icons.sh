@@ -48,11 +48,19 @@ fi
 echo "==> Source: $SRC ($($CONVERT identify -format '%wx%h' "$SRC" 2>/dev/null || echo '?'))"
 echo "==> Output: $DEST_DIR"
 
+# Logo chiếm 80% canvas (10% padding mỗi cạnh) → trông cân đối, không bị
+# tràn sát mép khi crop thành icon tròn (iOS) hoặc squircle (Android adaptive).
+# Padding tô màu navy `#1d3a52` cho khớp brand background của logo Basso AI.
+INNER_PCT=80
+PAD_BG="#1d3a52"
+
 resize() {
   size="$1"
   out="$2"
-  $CONVERT "$SRC" -resize "${size}x${size}" -filter Lanczos "$out"
-  echo "    $(basename "$out") (${size}x${size})"
+  inner=$(( size * INNER_PCT / 100 ))
+  $CONVERT "$SRC" -resize "${inner}x${inner}" -filter Lanczos \
+    -background "$PAD_BG" -gravity center -extent "${size}x${size}" "$out"
+  echo "    $(basename "$out") (${size}x${size}, logo ${inner}x${inner})"
 }
 
 resize 48  "$DEST_DIR/icon-48.png"

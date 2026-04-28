@@ -215,7 +215,7 @@ function injectPlatformChrome(html) {
     el.style.lineHeight = '1';
     el.style.gap = '2px';
     var arrow = document.createElement('span');
-    arrow.textContent = '\\u2191';
+    arrow.textContent = '\\u2192';
     arrow.setAttribute('aria-hidden', 'true');
     arrow.style.fontSize = '15px';
     arrow.style.lineHeight = '1';
