@@ -1421,7 +1421,7 @@
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
             <button type="button" class="btn-ghost btn-sm" id="btn-edit-git-pull">Clone &amp; pull lại</button>
           </div>
-          <p class="hint">Nhập URL + branch để clone repo vào bot này. Nếu URL đã được lưu trước đó, có thể bỏ trống và chỉ đổi branch. Bấm sẽ ngắt bot, clone lại và start.</p>
+          <p class="hint">URL có thể paste cả từ thanh địa chỉ GitHub (vd <code>.../tree/production</code>) — branch sẽ tự điền vào ô Nhánh. Nếu URL đã được lưu trước đó, có thể chỉ đổi ô Nhánh. Bấm sẽ ngắt bot, clone lại và start.</p>
           <p id="edit-bot-git-msg" class="hidden" style="margin-top:8px"></p>
         </div>
         <p id="edit-msg" class="hidden"></p>
@@ -3251,6 +3251,28 @@
       closeAddModal();
       if (newBotId) openEnvWizard(newBotId);
     };
+
+    // Auto-detect branch khi user paste URL kiểu github.com/owner/repo/tree/<branch>:
+    // copy vào ô Nhánh nếu nó đang trống.
+    function extractBranchFromGithubTreeUrl(raw) {
+      const s = String(raw || '').trim();
+      if (!s) return '';
+      let u;
+      try { u = new URL(s); } catch { return ''; }
+      if (u.hostname !== 'github.com') return '';
+      const parts = u.pathname.split('/').filter(Boolean);
+      if (parts.length < 4 || parts[2] !== 'tree') return '';
+      return parts.slice(3).join('/');
+    }
+    function maybeAutoFillEditBranch() {
+      const url = $('edit-bot-git-url').value;
+      const hint = extractBranchFromGithubTreeUrl(url);
+      if (hint && !$('edit-bot-git-branch').value.trim()) {
+        $('edit-bot-git-branch').value = hint;
+      }
+    }
+    $('edit-bot-git-url').addEventListener('input', maybeAutoFillEditBranch);
+    $('edit-bot-git-url').addEventListener('paste', () => setTimeout(maybeAutoFillEditBranch, 0));
 
     $('btn-edit-git-pull').onclick = async () => {
       const id = $('edit-bot-id').value;
