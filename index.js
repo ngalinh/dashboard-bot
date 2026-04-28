@@ -13,6 +13,7 @@ const auth = require('./lib/auth');
 const { ensurePlaceholderSeed } = require('./lib/placeholder-seed');
 const { normalizeBotId } = require('./lib/bot-id');
 const { readPlatformTokenFromReq } = require('./lib/platform-cookie');
+const botSlug = require('./lib/bot-slug');
 
 /** Chỉ cho phép tải /admin/* khi cookie phiên hợp lệ (trừ trang đăng nhập). */
 function requireAdminStaticAuth(req, res, next) {
@@ -80,6 +81,32 @@ app.get('/login.html', (_req, res, next) => {
   res.sendFile(path.join(publicDir, 'login.html'), (err) => (err ? next(err) : undefined));
 });
 app.use(express.static(publicDir));
+
+/**
+ * URL đẹp theo tên bot: /doraemon/ → rewrite nội bộ thành /b/<id>/ rồi cho
+ * botRouter xử lý tiếp. Reserved set + collision handling: xem lib/bot-slug.js.
+ * Chạy SAU express.static để file public (sw.js, login.html, ...) ưu tiên hơn.
+ */
+app.use((req, res, next) => {
+  const rawPath = typeof req.path === 'string' ? req.path : '';
+  if (!rawPath || rawPath === '/' || rawPath.length < 2) return next();
+  const slashIdx = rawPath.indexOf('/', 1);
+  const first = (slashIdx === -1 ? rawPath.slice(1) : rawPath.slice(1, slashIdx)).toLowerCase();
+  if (!first || botSlug.isReservedSlug(first)) return next();
+  let bots;
+  try {
+    bots = registry.readRegistry().bots;
+  } catch {
+    return next();
+  }
+  const bot = botSlug.getBotBySlug(first, bots);
+  if (!bot) return next();
+  const restPath = slashIdx === -1 ? '/' : rawPath.slice(slashIdx) || '/';
+  const qIdx = typeof req.url === 'string' ? req.url.indexOf('?') : -1;
+  const qs = qIdx >= 0 ? req.url.slice(qIdx) : '';
+  req.url = `/b/${encodeURIComponent(bot.id)}${restPath}${qs}`;
+  return next();
+});
 
 const botRouter = express.Router();
 
