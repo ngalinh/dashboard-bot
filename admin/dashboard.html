@@ -899,9 +899,9 @@
        design không có state xám mờ, chỉ pill OFFLINE làm tín hiệu "chưa có code". */
     .bot-card--placeholder:disabled { opacity: 1; }
     /* Card có pill OFFLINE — bao gồm bot thật offline VÀ placeholder chưa có source —
-       grayscale 20% để gợi ý trạng thái không hoạt động, hover về 0% (nếu không disabled). */
+       grayscale 40% để gợi ý trạng thái không hoạt động, hover về 0% (nếu không disabled). */
     .bot-card--offline,
-    .bot-card--placeholder { filter: grayscale(0.2); transition: filter 0.2s ease; }
+    .bot-card--placeholder { filter: grayscale(0.4); transition: filter 0.2s ease; }
     .bot-card--offline:hover:not(:disabled),
     .bot-card--placeholder:hover:not(:disabled) { filter: none; }
     .bot-card__banner {
