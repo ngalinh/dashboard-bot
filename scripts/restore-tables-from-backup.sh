@@ -65,14 +65,17 @@ if [ ! -f "$BACKUP_TAR" ]; then
   echo "Không thấy file backup: $BACKUP_TAR" >&2
   exit 1
 fi
-if [ ! -f .env ]; then
-  echo "Không thấy .env — cần MYSQL_ROOT_PASSWORD." >&2
-  exit 1
+# Lấy MYSQL_ROOT_PASSWORD từ container đang chạy (luôn đúng với mysql server hiện tại,
+# kể cả khi .env không có biến và compose đang dùng default devroot).
+ROOT_PW="$(docker compose -f "$COMPOSE_FILE" exec -T mysql sh -c 'printf %s "$MYSQL_ROOT_PASSWORD"' 2>/dev/null || true)"
+if [ -z "$ROOT_PW" ] && [ -f .env ]; then
+  # Fallback: parse .env (xử lý cả `export ` prefix, single/double quote, leading space)
+  ROOT_PW="$(sed -n 's/^[[:space:]]*\(export[[:space:]]\+\)\?MYSQL_ROOT_PASSWORD=["'\'']\?\([^"'\''[:space:]]*\)["'\'']\?[[:space:]]*$/\2/p' .env | head -1)"
 fi
-
-ROOT_PW="$(grep -E '^MYSQL_ROOT_PASSWORD=' .env | head -1 | cut -d= -f2-)"
 if [ -z "$ROOT_PW" ]; then
-  echo "MYSQL_ROOT_PASSWORD trong .env trống." >&2
+  echo "Không lấy được MYSQL_ROOT_PASSWORD." >&2
+  echo "  - Container mysql phải đang chạy (docker compose ps), HOẶC" >&2
+  echo "  - .env phải có dòng: MYSQL_ROOT_PASSWORD=<password>" >&2
   exit 1
 fi
 
