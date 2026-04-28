@@ -92,6 +92,32 @@ git reset --hard <commit_cu>
 docker compose -f docker-compose.prod.yml up --build -d
 ```
 
+## Troubleshooting — MySQL không lên, log spam `[MY-012595]`
+
+Triệu chứng (xem bằng `docker compose -f docker-compose.prod.yml logs --tail=200 mysql`):
+
+```
+[ERROR] [MY-012595] [InnoDB] The error means mysqld does not have the access rights to the directory.
+[ERROR] [MY-012592] [InnoDB] Operating system error number 13 in a file operation.
+[ERROR] [MY-012894] [InnoDB] Unable to open './#innodb_redo/#ib_redoN' (error: 1000).
+```
+
+**Nguyên nhân**: image `mysql:8.4` chạy mysqld dưới user `mysql` UID/GID **999:999** bên trong container. Volume `./data/mysql:/var/lib/mysql` là bind-mount, nên file trên host **phải** thuộc owner `999:999` — nếu lệch (chown nhầm, restore từ backup khác user, đổi userns-remap…) container sẽ không ghi được redo log → crash loop.
+
+**Fix nhanh** (trên server, ở `/opt/dashboard-bot`):
+
+```bash
+sudo ./scripts/recover-mysql.sh
+```
+
+Script sẽ stop container → `chown -R 999:999 ./data/mysql` → start lại → in log + `ps` để verify. Nếu vẫn lặp lỗi (redo log đã hỏng):
+
+```bash
+sudo ./scripts/recover-mysql.sh --reset-redo
+```
+
+Phiên bản này tự backup `data/mysql` ra `~/mysql-backup-*.tar.gz` rồi move toàn bộ `#innodb_redo/*` ra `./data/mysql_redo_quarantine_*` cho MySQL tự tạo lại từ đầu (crash recovery dùng `ibdata1` + binlog).
+
 ## KHÔNG commit các file nhạy cảm
 
 - `.env` (có `PLATFORM_ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `PLATFORM_SESSION_SECRET`…) — nằm ở server, không push Github
