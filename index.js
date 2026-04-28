@@ -83,8 +83,22 @@ app.get('/login.html', (_req, res, next) => {
 app.use(express.static(publicDir));
 
 /**
- * URL đẹp theo tên bot: /doraemon/ → rewrite nội bộ thành /b/<id>/ rồi cho
- * botRouter xử lý tiếp. Reserved set + collision handling: xem lib/bot-slug.js.
+ * URL đẹp theo tên bot: /doraemon/ → redirect 302 sang /b/<id>/ canonical.
+ *
+ * Tại sao redirect chứ không rewrite nội bộ: nhiều bot hardcode pattern
+ * `/b/<id>/...` trong JS frontend, lấy <id> bằng cách parse window.location.
+ * Nếu rewrite nội bộ, bot sẽ thấy URL trong address bar là /<slug>/, parse
+ * sai botId → API call vỡ → 404. Redirect để browser thấy URL canonical
+ * trước khi load HTML → bot's JS đọc /b/<id>/ chuẩn.
+ *
+ * Trade-off: address bar hiện /b/<id>/ thay vì /<slug>/ sau khi load. URL
+ * /<slug>/ vẫn dùng được để chia sẻ (auto-redirect).
+ *
+ * Cho non-GET (POST/PUT/...) — vẫn rewrite nội bộ để tránh việc 302 + browser
+ * convert POST→GET (RFC undefined behaviour) phá API call. Trường hợp này
+ * hiếm xảy ra vì sau redirect browser đã ở URL canonical.
+ *
+ * Reserved set + collision handling: xem lib/bot-slug.js.
  * Chạy SAU express.static để file public (sw.js, login.html, ...) ưu tiên hơn.
  */
 app.use((req, res, next) => {
@@ -104,7 +118,11 @@ app.use((req, res, next) => {
   const restPath = slashIdx === -1 ? '/' : rawPath.slice(slashIdx) || '/';
   const qIdx = typeof req.url === 'string' ? req.url.indexOf('?') : -1;
   const qs = qIdx >= 0 ? req.url.slice(qIdx) : '';
-  req.url = `/b/${encodeURIComponent(bot.id)}${restPath}${qs}`;
+  const target = `/b/${encodeURIComponent(bot.id)}${restPath}${qs}`;
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    return res.redirect(302, target);
+  }
+  req.url = target;
   return next();
 });
 
