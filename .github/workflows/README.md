@@ -118,6 +118,29 @@ sudo ./scripts/recover-mysql.sh --reset-redo
 
 Phiên bản này tự backup `data/mysql` ra `~/mysql-backup-*.tar.gz` rồi move toàn bộ `#innodb_redo/*` ra `./data/mysql_redo_quarantine_*` cho MySQL tự tạo lại từ đầu (crash recovery dùng `ibdata1` + binlog).
 
+### Khôi phục bảng đã DROP nhầm từ file backup
+
+Sau crash, đôi khi cần `DROP TABLE` để dọn orphan tablespace (`Got error 168 - 'Unknown (generic) error from engine'`). Việc này **xoá data**. Nếu trước đó có chạy `recover-mysql.sh --reset-redo` thì đã có file `~/mysql-backup-*.tar.gz` — dùng script sau để recover từng bảng:
+
+```bash
+sudo ./scripts/restore-tables-from-backup.sh \
+     ~/mysql-backup-2026-04-28-0839.tar.gz \
+     basso_platform \
+     user_sessions daily_order_stats app_config \
+     --bot=bot-794e5c0b078fc669
+```
+
+Script tự dựng MySQL phụ từ backup → `mysqldump` các bảng cần lấy → DROP bảng cũ trong MySQL chính → import dump → restart bot. Bot/Platform vẫn chạy, chỉ bot được nêu sẽ stop trong lúc import (~10s).
+
+## Log bot có timestamp
+
+Từ commit này trở đi, mọi process PM2 spawn cho bot Node/Python đều dùng flag `--time` nên mỗi dòng log có prefix `YYYY-MM-DD HH:mm:ss`. Hiệu lực với bot **mới** hoặc bot bị `pm2 delete` rồi start lại — bot cũ đang chạy cần restart bằng cách: edit/redeploy bot trong dashboard, hoặc trên server:
+
+```bash
+docker compose -f docker-compose.prod.yml exec platform pm2 delete bot-<id>
+# rồi vào dashboard bấm Start lại bot đó
+```
+
 ## KHÔNG commit các file nhạy cảm
 
 - `.env` (có `PLATFORM_ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `PLATFORM_SESSION_SECRET`…) — nằm ở server, không push Github
