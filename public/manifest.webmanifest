@@ -1,17 +1,18 @@
 {
-  "name": "Basso Platform",
-  "short_name": "Basso",
-  "description": "Basso AI chat platform control plane",
+  "name": "Basso AI",
+  "short_name": "Basso AI",
+  "description": "Basso AI chat platform",
   "start_url": "/admin/dashboard.html",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#062538",
+  "background_color": "#1d3a52",
+  "theme_color": "#1d3a52",
   "icons": [
     { "src": "/icons/icon-48.png", "sizes": "48x48", "type": "image/png" },
     { "src": "/icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
     { "src": "/icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
