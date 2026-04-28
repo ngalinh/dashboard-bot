@@ -1413,15 +1413,15 @@
         <div class="edit-icon-preview-wrap">
           <img id="edit-bot-icon-preview" class="edit-bot-icon-preview hidden" alt="Icon hiện tại" width="96" height="96" />
         </div>
-        <div id="edit-bot-git-section" class="row hidden" style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:8px">
-          <label>Nguồn GitHub</label>
-          <input id="edit-bot-git-url" type="text" readonly style="background:#f5f6f8;color:#555;cursor:not-allowed" placeholder="(không được clone từ GitHub)" />
-          <label for="edit-bot-git-branch" style="margin-top:10px">Nhánh</label>
+        <div id="edit-bot-git-section" class="row" style="border-top:1px solid #e5e7eb;padding-top:14px;margin-top:8px">
+          <label for="edit-bot-git-url">Nguồn GitHub (HTTPS)</label>
+          <input id="edit-bot-git-url" type="url" maxlength="512" placeholder="https://github.com/owner/repo" autocomplete="off" />
+          <label for="edit-bot-git-branch" style="margin-top:10px">Nhánh (tuỳ chọn)</label>
           <input id="edit-bot-git-branch" type="text" maxlength="255" placeholder="main" autocomplete="off" />
           <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
-            <button type="button" class="btn-ghost btn-sm" id="btn-edit-git-pull">Cập nhật branch &amp; pull lại</button>
+            <button type="button" class="btn-ghost btn-sm" id="btn-edit-git-pull">Clone &amp; pull lại</button>
           </div>
-          <p class="hint">Bấm để clone lại từ <code>gitUrl</code> hiện tại với branch ở trên. Sẽ ngắt bot để cài lại + start.</p>
+          <p class="hint">Nhập URL + branch để clone repo vào bot này. Nếu URL đã được lưu trước đó, có thể bỏ trống và chỉ đổi branch. Bấm sẽ ngắt bot, clone lại và start.</p>
           <p id="edit-bot-git-msg" class="hidden" style="margin-top:8px"></p>
         </div>
         <p id="edit-msg" class="hidden"></p>
@@ -2077,8 +2077,7 @@
       $('edit-bot-tasks').value = Array.isArray(b.tasks) ? b.tasks.join('\n') : '';
       $('edit-bot-id-hint').textContent = 'ID: ' + id;
       $('edit-msg').classList.add('hidden');
-      // Reset git section; sẽ điền sau khi fetch /bots/:id
-      $('edit-bot-git-section').classList.add('hidden');
+      // Reset git section — luôn hiện, fetch /bots/:id để điền giá trị đã lưu (nếu có).
       $('edit-bot-git-url').value = '';
       $('edit-bot-git-branch').value = '';
       $('edit-bot-git-msg').classList.add('hidden');
@@ -2086,13 +2085,10 @@
         .then((r) => (r.status === 401 ? null : r.json()))
         .then((d) => {
           if (!d || !d.success || !d.bot) return;
-          if (d.bot.gitUrl) {
-            $('edit-bot-git-url').value = d.bot.gitUrl;
-            $('edit-bot-git-branch').value = d.bot.gitBranch || '';
-            $('edit-bot-git-section').classList.remove('hidden');
-          }
+          $('edit-bot-git-url').value = d.bot.gitUrl || '';
+          $('edit-bot-git-branch').value = d.bot.gitBranch || '';
         })
-        .catch(() => { /* ignore — chỉ hiện section khi có gitUrl */ });
+        .catch(() => { /* ignore */ });
       $('modal-edit-bot').classList.remove('hidden');
       $('modal-edit-bot').setAttribute('aria-hidden', 'false');
       $('edit-bot-name').focus();
@@ -3259,6 +3255,7 @@
     $('btn-edit-git-pull').onclick = async () => {
       const id = $('edit-bot-id').value;
       if (!id) return;
+      const gitUrl = $('edit-bot-git-url').value.trim();
       const branch = $('edit-bot-git-branch').value.trim();
       const msg = $('edit-bot-git-msg');
       msg.className = 'hidden';
@@ -3268,7 +3265,7 @@
         const r = await api('/bots/' + encodeURIComponent(id) + '/pull', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ branch }),
+          body: JSON.stringify({ gitUrl, branch }),
         });
         if (r.status === 401) { sessionExpired(); return; }
         const d = await r.json();
