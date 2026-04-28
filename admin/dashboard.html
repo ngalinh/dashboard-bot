@@ -898,6 +898,12 @@
     /* Placeholder card cho non-admin: disabled để không click được, nhưng giữ nguyên màu —
        design không có state xám mờ, chỉ pill OFFLINE làm tín hiệu "chưa có code". */
     .bot-card--placeholder:disabled { opacity: 1; }
+    /* Card có pill OFFLINE — bao gồm bot thật offline VÀ placeholder chưa có source —
+       grayscale 20% để gợi ý trạng thái không hoạt động, hover về 0% (nếu không disabled). */
+    .bot-card--offline,
+    .bot-card--placeholder { filter: grayscale(0.2); transition: filter 0.2s ease; }
+    .bot-card--offline:hover:not(:disabled),
+    .bot-card--placeholder:hover:not(:disabled) { filter: none; }
     .bot-card__banner {
       padding: 18px 18px 14px;
       position: relative;
@@ -2782,7 +2788,9 @@
                 ? `<div class="bot-card__chat bot-card__chat--upload">TẢI MÃ NGUỒN<span class="bot-card__chat-arrow">→</span></div>`
                 : `<div class="bot-card__chat bot-card__chat--coming">SẮP CÓ</div>`)
             : `<div class="bot-card__chat">CHAT<span class="bot-card__chat-arrow">→</span></div>`;
-          const cardClass = isPlaceholder ? 'bot-card bot-card--placeholder' : 'bot-card';
+          const cardClass = isPlaceholder
+            ? 'bot-card bot-card--placeholder'
+            : (online ? 'bot-card' : 'bot-card bot-card--offline');
           return `
           <button type="button" class="${cardClass}" role="listitem"${dis}${openAttr}${uploadAttr}
             style="--bot-primary:${primary};--bot-shadow-tint:${shadowTint};--bot-shadow-hover:${shadowHover};--bot-halo:${haloHover};--bot-ring-hover:${ringHover}"
