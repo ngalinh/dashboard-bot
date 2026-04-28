@@ -1,5 +1,5 @@
 /* Minimal SW for static assets (icons/html/js). */
-const CACHE_NAME = 'basso-pwa-v3';
+const CACHE_NAME = 'basso-pwa-v4';
 const PRECACHE_URLS = [
   '/manifest.webmanifest',
   '/login.html',
