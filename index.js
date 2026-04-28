@@ -160,33 +160,86 @@ function sendBotIndexHtml(req, res, next) {
 }
 
 /**
- * Inject 1 nút floating "← Dashboard" vào HTML của bot — để user quay lại
- * /admin/dashboard.html mà không phải sửa source bot. Tắt bằng env
- * PLATFORM_BOT_BACK_BUTTON=0.
+ * Inject script biến nút "Logout" có sẵn trong bot UI thành nút "Back" dẫn về
+ * /admin/dashboard.html. Detect bằng text content (Logout / Log out / Đăng xuất)
+ * hoặc onclick gọi `logoutChatAndPlatform`. Có MutationObserver cho bot dạng
+ * SPA render UI sau khi load. Tắt bằng env PLATFORM_BOT_BACK_BUTTON=0.
+ *
+ * Cũng cleanup cái pill floating "__platform_back_btn" nếu còn cache từ phiên
+ * bản trước (đã đổi cách).
  */
 function injectPlatformChrome(html) {
   if (process.env.PLATFORM_BOT_BACK_BUTTON === '0') return html;
-  // z-index max-int để vượt qua mọi modal/overlay có thể có trong bot UI.
-  // backdrop-filter để dễ đọc khi đè trên ảnh nền sáng/tối.
-  const snippet = [
-    '<a id="__platform_back_btn" href="/admin/dashboard.html"',
-    ' aria-label="Quay về Dashboard"',
-    ' style="position:fixed;top:max(14px,env(safe-area-inset-top));',
-    'left:max(14px,env(safe-area-inset-left));z-index:2147483647;',
-    'padding:8px 14px 8px 12px;background:rgba(15,23,42,.78);color:#fff;',
-    'font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;',
-    'border-radius:999px;text-decoration:none;cursor:pointer;',
-    '-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);',
-    'box-shadow:0 2px 12px rgba(0,0,0,.18);',
-    'display:inline-flex;align-items:center;gap:6px;',
-    'transition:background .15s,transform .15s;"',
-    ' onmouseover="this.style.background=\'rgba(15,23,42,.92)\'"',
-    ' onmouseout="this.style.background=\'rgba(15,23,42,.78)\'"',
-    '><span aria-hidden="true" style="font-size:15px;line-height:1">&larr;</span>',
-    '<span>Dashboard</span></a>',
-  ].join('');
-  if (/<\/body\s*>/i.test(html)) return html.replace(/<\/body\s*>/i, snippet + '</body>');
-  return html + snippet;
+  const script = `<script id="__platform_chrome_inject">(function(){
+  var DEST = '/admin/dashboard.html';
+  var LABELS = ['logout', 'log out', 'đăng xuất', 'dang xuat', 'sign out'];
+  function normText(el){
+    return (el.textContent || '').replace(/[\\u2190\\u2192\\s\\u00a0]+/g, ' ').trim().toLowerCase();
+  }
+  function isLogout(el){
+    if (!el || (el.tagName !== 'A' && el.tagName !== 'BUTTON')) return false;
+    if (el.dataset.__platformBack === '1') return false;
+    var t = normText(el);
+    if (LABELS.indexOf(t) !== -1) return true;
+    var onc = (el.getAttribute('onclick') || '').toLowerCase();
+    if (onc.indexOf('logoutchatandplatform') !== -1) return true;
+    if (onc.indexOf('logout(') !== -1) return true;
+    return false;
+  }
+  function convert(el){
+    if (!el || el.dataset.__platformBack === '1') return;
+    el.dataset.__platformBack = '1';
+    while (el.firstChild) el.removeChild(el.firstChild);
+    var arrow = document.createElement('span');
+    arrow.textContent = '\\u2190';
+    arrow.setAttribute('aria-hidden', 'true');
+    arrow.style.marginRight = '4px';
+    el.appendChild(arrow);
+    el.appendChild(document.createTextNode('Back'));
+    el.setAttribute('aria-label', 'Quay về Dashboard');
+    if (el.tagName === 'A') {
+      el.setAttribute('href', DEST);
+      el.removeAttribute('target');
+    }
+    el.removeAttribute('onclick');
+    el.addEventListener('click', function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+      window.location.assign(DEST);
+    }, true);
+  }
+  function scan(root){
+    if (!root || !root.querySelectorAll) return;
+    var els = root.querySelectorAll('a, button');
+    for (var i = 0; i < els.length; i++) if (isLogout(els[i])) convert(els[i]);
+  }
+  function start(){
+    var oldPill = document.getElementById('__platform_back_btn');
+    if (oldPill && oldPill.parentNode) oldPill.parentNode.removeChild(oldPill);
+    scan(document);
+    if (typeof MutationObserver !== 'function') return;
+    var mo = new MutationObserver(function(muts){
+      for (var i = 0; i < muts.length; i++) {
+        var added = muts[i].addedNodes;
+        for (var j = 0; j < added.length; j++) {
+          var n = added[j];
+          if (n && n.nodeType === 1) {
+            if (isLogout(n)) convert(n);
+            scan(n);
+          }
+        }
+      }
+    });
+    mo.observe(document.documentElement || document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', start);
+  } else {
+    start();
+  }
+})();</script>`;
+  if (/<\/body\s*>/i.test(html)) return html.replace(/<\/body\s*>/i, script + '</body>');
+  return html + script;
 }
 
 botRouter.get('/:botId/index.html', sendBotIndexHtml);
