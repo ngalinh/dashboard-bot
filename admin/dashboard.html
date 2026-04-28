@@ -898,12 +898,12 @@
     /* Placeholder card cho non-admin: disabled để không click được, nhưng giữ nguyên màu —
        design không có state xám mờ, chỉ pill OFFLINE làm tín hiệu "chưa có code". */
     .bot-card--placeholder:disabled { opacity: 1; }
-    /* Bot thật đang offline — brightness 50% + giảm saturation 40% để làm nổi
-       bật bot Online. Cách kết hợp giúp card "tối + ngả xám" rõ rệt hơn chỉ
-       brightness đơn lẻ (vì phần lớn card là nền trắng).
-       Hover về 1.0 để feedback "đánh thức" (không áp dụng nếu disabled). */
-    .bot-card--offline { filter: brightness(0.5) saturate(0.6); transition: filter 0.2s ease; }
-    .bot-card--offline:hover:not(:disabled) { filter: none; }
+    /* Card có pill OFFLINE — bao gồm cả bot thật offline VÀ placeholder chưa có source —
+       brightness 50% + saturate 60% để làm nổi bật bot Online. Hover về 1.0 (nếu không disabled). */
+    .bot-card--offline,
+    .bot-card--placeholder { filter: brightness(0.5) saturate(0.6); transition: filter 0.2s ease; }
+    .bot-card--offline:hover:not(:disabled),
+    .bot-card--placeholder:hover:not(:disabled) { filter: none; }
     .bot-card__banner {
       padding: 18px 18px 14px;
       position: relative;
