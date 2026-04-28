@@ -150,7 +150,43 @@ function sendBotIndexHtml(req, res, next) {
   if (!root || !fs.existsSync(indexPath)) {
     return res.status(404).type('text/plain; charset=utf-8').send('Không tìm thấy index.html của bot.');
   }
-  res.sendFile(indexPath, (err) => (err ? next(err) : undefined));
+  let html;
+  try {
+    html = fs.readFileSync(indexPath, 'utf8');
+  } catch (e) {
+    return next(e);
+  }
+  res.type('text/html; charset=utf-8').send(injectPlatformChrome(html));
+}
+
+/**
+ * Inject 1 nút floating "← Dashboard" vào HTML của bot — để user quay lại
+ * /admin/dashboard.html mà không phải sửa source bot. Tắt bằng env
+ * PLATFORM_BOT_BACK_BUTTON=0.
+ */
+function injectPlatformChrome(html) {
+  if (process.env.PLATFORM_BOT_BACK_BUTTON === '0') return html;
+  // z-index max-int để vượt qua mọi modal/overlay có thể có trong bot UI.
+  // backdrop-filter để dễ đọc khi đè trên ảnh nền sáng/tối.
+  const snippet = [
+    '<a id="__platform_back_btn" href="/admin/dashboard.html"',
+    ' aria-label="Quay về Dashboard"',
+    ' style="position:fixed;top:max(14px,env(safe-area-inset-top));',
+    'left:max(14px,env(safe-area-inset-left));z-index:2147483647;',
+    'padding:8px 14px 8px 12px;background:rgba(15,23,42,.78);color:#fff;',
+    'font:600 13px/1 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;',
+    'border-radius:999px;text-decoration:none;cursor:pointer;',
+    '-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);',
+    'box-shadow:0 2px 12px rgba(0,0,0,.18);',
+    'display:inline-flex;align-items:center;gap:6px;',
+    'transition:background .15s,transform .15s;"',
+    ' onmouseover="this.style.background=\'rgba(15,23,42,.92)\'"',
+    ' onmouseout="this.style.background=\'rgba(15,23,42,.78)\'"',
+    '><span aria-hidden="true" style="font-size:15px;line-height:1">&larr;</span>',
+    '<span>Dashboard</span></a>',
+  ].join('');
+  if (/<\/body\s*>/i.test(html)) return html.replace(/<\/body\s*>/i, snippet + '</body>');
+  return html + snippet;
 }
 
 botRouter.get('/:botId/index.html', sendBotIndexHtml);
