@@ -908,6 +908,10 @@
       padding: 18px 18px 14px;
       position: relative;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+      /* iOS Safari (đặc biệt PWA standalone) không stretch children của <button>
+         theo flex column → banner/body bị co theo intrinsic width, dồn về trái.
+         Ép width:100% để Safari render đúng. */
+      width: 100%;
     }
     .bot-card__pill {
       position: absolute;
@@ -1044,6 +1048,8 @@
       flex: 1;
       display: flex;
       flex-direction: column;
+      /* Cùng lý do với .bot-card__banner: ép full width để fix iOS Safari PWA. */
+      width: 100%;
     }
     .bot-card__role {
       font-size: 13px;
