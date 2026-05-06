@@ -447,20 +447,21 @@ const PORT = parseInt(process.env.PORT || '3980', 10);
   } catch (e) {
     console.error('[platform] Placeholder seed failed:', e.message || e);
   }
-  /**
-   * Resurrect bot ngay khi platform khởi động: container restart (deploy/OOM/đêm)
-   * sẽ giết PM2 daemon → mọi bot chết theo. Watchdog phục hồi chậm (~3 phút/bot
-   * vì cooldown), nên chạy 1 lượt pm2 start trước khi listen để bot quay lại
-   * gần như tức thì. Lỗi resurrect không chặn platform start.
-   */
-  try {
-    await service.ensureBotsRunning();
-  } catch (e) {
-    console.error('[platform] ensureBotsRunning failed:', e.message || e);
-  }
   app.listen(PORT, () => {
     console.log(`[platform] http://localhost:${PORT}`);
     console.log(`[platform] Admin UI: http://localhost:${PORT}/admin/dashboard.html`);
     service.startBotHealthWatchdog();
+    /**
+     * Resurrect bot SAU khi /health đã sẵn sàng: container restart sẽ giết PM2
+     * daemon → mọi bot chết theo. Watchdog phục hồi chậm (~3 phút/bot vì
+     * cooldown), nên kích hoạt 1 lượt pm2 start ngay. Phải chạy fire-and-forget
+     * SAU app.listen vì mỗi `pm2 start` tốn ~2–3s × N bot có thể vượt healthcheck
+     * timeout của deploy script. Lỗi không cản platform.
+     */
+    setImmediate(() => {
+      service.ensureBotsRunning().catch((e) => {
+        console.error('[platform] ensureBotsRunning failed:', e.message || e);
+      });
+    });
   });
 })();
