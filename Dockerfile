@@ -26,9 +26,4 @@ RUN if [ -f public/icons/source-logo.png ]; then \
 ENV NODE_ENV=production
 EXPOSE 3980
 
-# Chạy platform dưới pm2-runtime (PID 1) thay vì `node index.js` trực tiếp:
-#   - autorestart + max_memory_restart (480M) định nghĩa trong ecosystem.config.cjs
-#     cứu platform khi leak/OOM thay vì chỉ phụ thuộc Docker `restart: unless-stopped`.
-#   - Cùng PM2 daemon quản lý các bot (pm2 start npm --name bot-{id}) — nhất quán.
-# pm2-runtime giữ foreground (không daemonize) — phù hợp container.
-CMD ["pm2-runtime", "start", "ecosystem.config.cjs", "--env", "production"]
+CMD ["node", "index.js"]
