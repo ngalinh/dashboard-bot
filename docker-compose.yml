@@ -34,6 +34,7 @@ services:
     # Basso admin / khác: ghi trong platform/.env (BASSO_URL, BASSO_API_KEY, PLATFORM_SESSION_SECRET, …)
     environment:
       NODE_ENV: production
+      TZ: Asia/Ho_Chi_Minh
       PLATFORM_COOKIE_SECURE: "0"
       PORT: "3980"
       PLATFORM_ADMIN_USER: admin
