@@ -60,6 +60,7 @@ services:
     # Basso, PLATFORM_SESSION_SECRET, mật khẩu mạnh: platform/.env — đặt MYSQL_ROOT_PASSWORD, PUBLIC_ORIGIN (HTTPS)
     environment:
       NODE_ENV: production
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
       PLATFORM_COOKIE_SECURE: ${PLATFORM_COOKIE_SECURE:-0}
       PORT: "${PORT:-3980}"
       PLATFORM_ADMIN_USER: ${PLATFORM_ADMIN_USER:-admin}
