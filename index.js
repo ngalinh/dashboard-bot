@@ -376,48 +376,68 @@ botRouter.use('/:botId', (req, res, next) => {
     /**
      * Log lỗi proxy rõ ràng (upstream down/reset/timeout…).
      * Tránh trường hợp client thấy pending mà không biết nguyên nhân.
+     *
+     * Timeout 120s: /api/create-order chờ Basso, đo thực tế ~37s khi shop
+     * chậm. Mức 15s cũ cắt giữa request → đơn vẫn được Basso ghi nhận
+     * nhưng FE thấy lỗi → user bấm lại → tạo trùng đơn.
      */
-    proxyTimeout: 15_000,
-    timeout: 20_000,
-    onError(err, req, res) {
-      const code = err && typeof err === 'object' && 'code' in err ? String(err.code) : '';
-      const msg = err instanceof Error ? err.message : String(err);
-      console.error('[platform/proxy]', 'bot request failed', {
-        botId,
-        target: `http://127.0.0.1:${bot.port}`,
-        method: req.method,
-        url: req.originalUrl || req.url,
-        code: code || undefined,
-        message: msg,
-      });
-      if (res.headersSent) return;
-      const isTimeout =
-        code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT' || /timeout/i.test(msg || '');
-      res
-        .status(isTimeout ? 504 : 502)
-        .type('text/plain; charset=utf-8')
-        .send(isTimeout ? 'Gateway Timeout (bot upstream)' : 'Bad Gateway (bot upstream)');
-    },
-    onProxyReq(_proxyReq, req) {
-      // Ghi log request proxy cho debug khi cần (không log body).
-      if (process.env.PLATFORM_PROXY_DEBUG === '1') {
-        console.log('[platform/proxy]', '→ bot', {
+    proxyTimeout: 120_000,
+    timeout: 120_000,
+    /**
+     * http-proxy-middleware v3 bỏ các callback top-level (onError,
+     * onProxyReq, onProxyRes) — phải đăng ký qua `on: {...}`. Dùng API
+     * v2 ở v3 thì handler bị ignore → fallback default node-http-proxy
+     * in plain text "Error occured while trying to proxy..." → FE
+     * JSON.parse() vỡ với "Unexpected token 'E'".
+     */
+    on: {
+      error(err, req, res) {
+        const code = err && typeof err === 'object' && 'code' in err ? String(err.code) : '';
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error('[platform/proxy]', 'bot request failed', {
           botId,
-          method: req.method,
-          url: req.originalUrl || req.url,
           target: `http://127.0.0.1:${bot.port}`,
-        });
-      }
-    },
-    onProxyRes(proxyRes, req) {
-      if (process.env.PLATFORM_PROXY_DEBUG === '1') {
-        console.log('[platform/proxy]', '← bot', {
-          botId,
           method: req.method,
           url: req.originalUrl || req.url,
-          statusCode: proxyRes.statusCode,
+          code: code || undefined,
+          message: msg,
         });
-      }
+        if (!res || res.headersSent) return;
+        const isTimeout =
+          code === 'ETIMEDOUT' || code === 'ESOCKETTIMEDOUT' || /timeout/i.test(msg || '');
+        // FE expect JSON — plain text khiến JSON.parse() vỡ.
+        res
+          .status(isTimeout ? 504 : 502)
+          .type('application/json; charset=utf-8')
+          .end(
+            JSON.stringify({
+              success: false,
+              message: isTimeout
+                ? 'Bot phản hồi quá chậm, đã quá thời gian chờ. Vui lòng kiểm tra lại đơn trên hệ thống trước khi tạo lại.'
+                : 'Không kết nối được tới bot. Vui lòng thử lại sau ít phút.',
+            })
+          );
+      },
+      proxyReq(_proxyReq, req) {
+        if (process.env.PLATFORM_PROXY_DEBUG === '1') {
+          console.log('[platform/proxy]', '→ bot', {
+            botId,
+            method: req.method,
+            url: req.originalUrl || req.url,
+            target: `http://127.0.0.1:${bot.port}`,
+          });
+        }
+      },
+      proxyRes(proxyRes, req) {
+        if (process.env.PLATFORM_PROXY_DEBUG === '1') {
+          console.log('[platform/proxy]', '← bot', {
+            botId,
+            method: req.method,
+            url: req.originalUrl || req.url,
+            statusCode: proxyRes.statusCode,
+          });
+        }
+      },
     },
   });
   proxy(req, res, next);
