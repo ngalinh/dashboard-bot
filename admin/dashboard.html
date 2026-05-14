@@ -859,6 +859,12 @@
     @media (min-width: 641px) and (max-width: 900px) {
       .bold-grid-cards { grid-template-columns: repeat(2, 1fr) !important; }
     }
+    @media (min-width: 1200px) {
+      .bold-grid-cards {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        max-width: 1320px;
+      }
+    }
 
     /* Bot card */
     .bot-card {
