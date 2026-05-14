@@ -121,6 +121,7 @@
     }
     .dashboard-header__row {
       width: 100%;
+      max-width: 1320px;
       height: 100%;
       margin: 0 auto;
       display: flex;
@@ -795,11 +796,10 @@
       background: #E9EEF4;
       min-height: 100vh;
     }
-    /* Bỏ max-width bó của .wrap ở trang dashboard để grid 4+ cột được hiển thị trên
-       viewport rộng, khớp preview design (container full-width, chỉ grid có 280px minmax).
-       padding top 28px = khoảng trống giữa header và badge ASALE BOT TEAM, giống preview. */
+    /* Container căn giữa, max-width 1320px khớp header để hero + grid không lệch trái
+       trên màn hình rộng. padding top 28px = khoảng trống giữa header và badge ASALE BOT TEAM. */
     body.dashboard-active .wrap {
-      max-width: none;
+      max-width: 1320px;
       padding: 28px 32px 60px;
     }
 
@@ -862,7 +862,6 @@
     @media (min-width: 1200px) {
       .bold-grid-cards {
         grid-template-columns: repeat(4, minmax(0, 1fr));
-        max-width: 1320px;
       }
     }
 
